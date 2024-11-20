@@ -148,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 onTap: () async {
                   final XFile? image =
-                      await _picker.pickImage(source: ImageSource.camera);
+                  await _picker.pickImage(source: ImageSource.camera);
                   if (image != null) {
                     print("Picked image from camera: ${image.path}");
                   }
@@ -163,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 onTap: () async {
                   final XFile? image =
-                      await _picker.pickImage(source: ImageSource.gallery);
+                  await _picker.pickImage(source: ImageSource.gallery);
                   if (image != null) {
                     print("Picked image from gallery: ${image.path}");
                   }
@@ -252,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title:
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
           content: Text(detail),
           actions: [
             TextButton(
@@ -271,17 +271,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Center(
-          child: Text(
-            'Revive Your Hair',
-            style: TextStyle(
-                color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 28),
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Container(
@@ -299,132 +288,151 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
                     color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
                   ),
-                  padding: const EdgeInsets.all(20),
                   child: Column(
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            onPressed: _showFaqDialog,
-                            child: const Text('FAQ'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors
-                                  .blue, // Use backgroundColor instead of primary
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                              textStyle: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                      children: [Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Hair Care Tips',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 20),
-                          ElevatedButton(
-                            onPressed: _showCameraOptions,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors
-                                  .blue, // Use backgroundColor instead of primary
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                              textStyle: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            const SizedBox(height: 20),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Center(
+                                    child: Container(
+                                      height: 100,
+                                      width: 300,
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Expanded(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'Our test can help you\nto detect alopecia',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 18,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding:
+                                            const EdgeInsets.only(right: 20.0),
+                                            child: Image.asset(
+                                              'assets/scanner.png', // Replace with your image path
+                                              width: 60,
+                                              height: 60,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: const Text('Take Image'),
-                          ),
-                          // Container(
-                          //   height: 1000.0,
-                          //   width: 1000.0,
-                          //   color: Colors.red, // Replace with your desired color
-                          // )
-                        ],
+                            const Text(
+                              'Explore personalized tips and tricks to help you maintain healthy hair. Learn about hair care routines, prevention strategies, and ways to revitalize your hair naturally.',
+                              style: TextStyle(fontSize: 20, color: Colors.black),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Hair Care Tips',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Center(
+                                      child: Container(
+                                        height: 100,
+                                        width: 300,
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue,
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Expanded(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  'Our test can help you\nto detect alopecia',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding:
+                                              const EdgeInsets.only(right: 20.0),
+                                              child: Image.asset(
+                                                'assets/scanner.png', // Replace with your image path
+                                                width: 60,
+                                                height: 60,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Text(
+                                'Explore personalized tips and tricks to help you maintain healthy hair. Learn about hair care routines, prevention strategies, and ways to revitalize your hair naturally.',
+                                style: TextStyle(fontSize: 20, color: Colors.black),
+                              ),
+                            ],
+                          ),
+                        ),]
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
-        child: SizedBox(
-          height: 80,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.home, size: 30, color: Colors.blue),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.person, size: 30, color: Colors.blue),
-              ),
-              ElevatedButton(
-                onPressed: _showCameraOptions,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  shape: const CircleBorder(),
-                  padding: const EdgeInsets.all(18.0),
-                ),
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: Colors.white,
-                  size: 30.0,
-                ),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.timer, size: 30, color: Colors.blue),
-              ),
-              PopupMenuButton(
-                color: Colors.black,
-                icon: const Icon(Icons.menu, size: 30, color: Colors.blue),
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'Set Up Notification',
-                    child: Text(
-                      'Set Up Notification',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'Blog',
-                    child: Text(
-                      'Blog',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'FAQ',
-                    child: Text(
-                      'FAQ',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-                onSelected: (value) {
-                  if (value == 'FAQ') _showFaqDialog();
-                },
-              ),
-            ],
           ),
         ),
       ),
