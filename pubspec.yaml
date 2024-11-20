@@ -27,6 +27,16 @@ flutter:
     - assets/revivehair.png
     - assets/male pattern baldness.jpg
     - assets/scanner.png
+#    - assets/icons/chat.svg
+#    - assets/icons/facebook.svg
+#    - assets/icons/google-plus.svg
+#    - assets/icons/login.svg
+#    - assets/icons/signup.svg
+#    - assets/icons/twitter.svg
+#    - assets/images/login_button.png
+#    - assets/images/main_bottom.png
+#    - assets/images/main_top.png
+#    - assets/images/signup_top
 
   fonts:
     - family: Pacifico
