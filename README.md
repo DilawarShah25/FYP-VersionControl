@@ -1,4 +1,4 @@
-# camera_gallery
+# HAIR BUDDY
 
 A new Flutter project.
 
