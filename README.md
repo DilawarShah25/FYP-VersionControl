@@ -1,5 +1,3 @@
-# scalpsense
-
 Focuses on detecting scalp health and providing personalized solutions.
 
 ## Getting Started
