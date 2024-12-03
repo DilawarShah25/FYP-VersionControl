@@ -1,4 +1,4 @@
-# HAIR BUDDY
+# Scalp Sense
 
 A new Flutter project.
 
