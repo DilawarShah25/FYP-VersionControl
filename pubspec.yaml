@@ -1,0 +1,53 @@
+name: scalpsense
+description: "Focuses on detecting scalp health and providing personalized solutions."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+environment:
+  sdk: ^3.5.3
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  image_picker: ^1.1.2
+  dots_indicator: ^3.0.0
+  curved_navigation_bar: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/revivehair.png
+    - assets/male pattern baldness.jpg
+    - assets/scanner.png
+  #    - assets/icons/chat.svg
+  #    - assets/icons/facebook.svg
+  #    - assets/icons/google-plus.svg
+  #    - assets/icons/login.svg
+  #    - assets/icons/signup.svg
+  #    - assets/icons/twitter.svg
+  #    - assets/images/login_button.png
+  #    - assets/images/main_bottom.png
+  #    - assets/images/main_top.png
+  #    - assets/images/signup_top
+
+  fonts:
+    - family: Pacifico
+      fonts:
+        - asset: fonts/Pacifico-Regular.ttf
+    - family: sans-serif
+      fonts:
+        - asset: fonts/SourceSans3-VariableFont_wght.ttf
+    # - family: Trajan Pro
+    #   fonts:
+    #     - asset: fonts/TrajanPro.ttf
+    #     - asset: fonts/TrajanPro_Bold.ttf
+    #       weight: 700
