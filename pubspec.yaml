@@ -1,8 +1,8 @@
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+name: scalpsense # Replace 'scalpsense' with your project's name
+publish_to: 'scalpsense' # Remove this line if you wish to publish to pub.dev
 
 environment:
   sdk: ^3.5.3
-
 
 dependencies:
   flutter:
