@@ -119,3 +119,14 @@ backend/
 ├── config.py                            # App configurations.
 ├── app.py                               # Main entry point for the backend.
 └── README.md                            # Backend documentation.
+
+
+Backend:
+Controllers: Python can handle various logic and API routes, manage user authentication, process images, and handle recommendations.
+Models: Define database schemas for users, images, progress tracking, and more.
+Views: Set up API endpoints for user authentication, image detection, progress tracking, and recommendations.
+Services: Implement business logic, integrate AI/ML models for image analysis, and manage notifications.
+Utilities: Use helpers for validation, logging, and other miscellaneous tasks.
+Migrations: Handle database schema changes effectively.
+Static Files: Manage static assets and log files.
+Python's versatility makes it a great fit for managing backend logic and server-side processes. Anything specific you’d like to dive into? Or maybe you'd like some help with a particular part of your project?

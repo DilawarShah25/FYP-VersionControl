@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../slider/carousel_view.dart';
 import '../progress/progress_details_view.dart';
+import '../detection/detection_results_view.dart'; // Import DetectionResultView
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -27,7 +28,6 @@ class _HomeViewState extends State<HomeView> {
                       'lib/front-end/assets/images/carousel_item2.png',
                       'lib/front-end/assets/images/carousel_item3.png',
                     ],
-
                   ),
                 ),
                 Container(
@@ -58,81 +58,90 @@ class _HomeViewState extends State<HomeView> {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          height: 340.0,
+                                  const SizedBox(height: 20),
+
+                                  // First Container
+                                  Container(
+                                    height: 350.0,
+                                    width: MediaQuery.of(context).size.width * 0.95,
+                                    decoration: BoxDecoration(
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.3),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          height: 310,
                                           width: double.infinity,
                                           decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.grey
-                                                    .withOpacity(0.2),
-                                                spreadRadius: 2,
-                                                blurRadius: 5,
-                                              ),
-                                            ],
+                                            borderRadius: BorderRadius.circular(10),
                                           ),
                                           clipBehavior: Clip.hardEdge,
                                           child: const PerformanceDetailsView(),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                  const SizedBox(height: 20.0),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          height: 150.0,
+
+                                  // Second Container (Updated to call DetectionResultView)
+                                  Container(
+                                    height: 410.0,
+                                    margin: const EdgeInsets.only(bottom: 20),
+                                    padding: const EdgeInsets.all(0),
+                                    width: MediaQuery.of(context).size.width * 0.95,
+                                    decoration: BoxDecoration(
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.3),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Center(
+                                      child: DetectionResultView(
+                                        title: 'Detection Result',
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Third Container
+                                  Container(
+                                    height: 190.0,
+                                    margin: const EdgeInsets.only(bottom: 20),
+                                    padding: const EdgeInsets.all(0),
+                                    width: MediaQuery.of(context).size.width * 0.95,
+                                    decoration: BoxDecoration(
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.3),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          height: 180.0,
                                           width: double.infinity,
                                           decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.grey
-                                                    .withOpacity(0.2),
-                                                spreadRadius: 2,
-                                                blurRadius: 5,
-                                              ),
-                                            ],
+                                            borderRadius: BorderRadius.circular(10),
+                                            color: Colors.orangeAccent,
                                           ),
-                                          clipBehavior: Clip.hardEdge,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20.0),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          height: 150.0,
-                                          width: double.infinity,
-                                          decoration: BoxDecoration(
-                                            color: Colors.orange,
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.grey
-                                                    .withOpacity(0.2),
-                                                spreadRadius: 2,
-                                                blurRadius: 5,
-                                              ),
-                                            ],
-                                          ),
-                                          clipBehavior: Clip.hardEdge,
-                                        ),
-                                      ),
-                                    ],
+                                        const SizedBox(height: 10),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),

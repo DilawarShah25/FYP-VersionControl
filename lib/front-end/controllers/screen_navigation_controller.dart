@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // Import image_picker
 import '../views/dashboard/profile_view.dart'; // Correct import if profile_screen.dart is in the 'screens' folder
 import '../views/dashboard/home_view.dart';
-import '../views/authentication/registration_view.dart';
+import '../views/authentication/role_selection_view.dart';
+import '../views/dashboard/blog_view.dart';
 
 class ScreensManager extends StatefulWidget {
   const ScreensManager({super.key});
@@ -125,12 +126,12 @@ class _ScreensManagerState extends State<ScreensManager> {
               FloatingActionButton(
                 onPressed: _showCameraOptions,
                 backgroundColor: Colors.red,
+                tooltip: 'Camera',
                 child: const Icon(
                   Icons.camera_alt,
                   color: Colors.white,
                   size: 30.0,
                 ),
-                tooltip: 'Camera',
               ),
               // Timer/Other tab
               IconButton(
@@ -201,7 +202,14 @@ class _ScreensManagerState extends State<ScreensManager> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const RegistrationScreen()),
+                          builder: (context) => RoleSelectionView()),
+                    );
+                  }
+                  else if (value == 'FAQ') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const FaqView()),
                     );
                   }
                 },

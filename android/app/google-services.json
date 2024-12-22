@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "877274148035",
+    "project_id": "hairfall-f179d",
+    "storage_bucket": "hairfall-f179d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:877274148035:android:627bae62a56ab549fe4676",
+        "android_client_info": {
+          "package_name": "com.example.scalp_sense"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtW_6mnA_gTKYMljWaB0w3x4VjncXqdM8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

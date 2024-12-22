@@ -14,8 +14,8 @@ class PerformanceDetailsView extends StatelessWidget {
           children: [
             // Header Section
             Container(
-              height: 120,
-              width: double.infinity,
+              height: 100,
+              width: 250,
               decoration: BoxDecoration(
                 color: Colors.blue,
                 borderRadius: BorderRadius.circular(20), // Rounded corners for the header
@@ -26,11 +26,11 @@ class PerformanceDetailsView extends StatelessWidget {
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
                       child: Text(
-                        'Our test can help you detect hairfall early.',
+                        'Our test can help you detect hair fall early.',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                          fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
                       ),

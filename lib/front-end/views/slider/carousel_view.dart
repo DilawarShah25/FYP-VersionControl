@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../authentication/registration_view.dart';
-import '../authentication/login_view.dart'; // Import additional views
-import '../dashboard/faq_view.dart';
-
+import '../authentication/role_selection_view.dart';
+import '../authentication/user_login_view.dart'; // Import additional views
+import '../dashboard/blog_view.dart';
+import '../dashboard/user_manual_view.dart';
+import '../dashboard/home_view.dart';
 class Carousel extends StatefulWidget {
   final List<String> images;
 
@@ -51,13 +52,13 @@ class _CarouselState extends State<Carousel> {
       case 0:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const RegistrationScreen()),
+          MaterialPageRoute(builder: (context) => const UserManualView()),
         );
         break;
       case 1:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const LoginView()),
+          MaterialPageRoute(builder: (context) => const UserLoginView()),
         );
         break;
       case 2:
@@ -67,6 +68,10 @@ class _CarouselState extends State<Carousel> {
         );
         break;
       default:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeView()),
+        );
         break;
     }
   }

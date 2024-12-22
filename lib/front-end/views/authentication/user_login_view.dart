@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'signup_view.dart'; // Import the Signup Screen
+import 'sign_up.dart'; // Import the Signup Screen
 import '../dashboard/home_view.dart';   // Import the Home Screen (Assuming it's your home screen)
 import '../../controllers/screen_navigation_controller.dart';
 
-class LoginView extends StatefulWidget {
-  const LoginView({Key? key}) : super(key: key);
+class UserLoginView extends StatefulWidget {
+  const UserLoginView({Key? key}) : super(key: key);
 
   @override
-  _LoginViewState createState() => _LoginViewState();
+  _UserLoginViewState createState() => _UserLoginViewState();
 }
 
-class _LoginViewState extends State<LoginView> {
+class _UserLoginViewState extends State<UserLoginView> {
   // Controllers to hold the email and password
   TextEditingController emailController = TextEditingController(text: 'csdilawar@gmail.com');
   TextEditingController passwordController = TextEditingController(text: '1234');
@@ -40,28 +40,26 @@ class _LoginViewState extends State<LoginView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.blue,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: const Text(
+          'User Login',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
       backgroundColor: Colors.blue, // Light background for better visibility
       body: SafeArea(
         child: Column(
           children: [
-            // First Container with Title
-            Container(
-              height: 80.0,
-              width: double.infinity,
-              alignment: Alignment.center, // Centers the child within the container
-              decoration: const BoxDecoration(
-                color: Colors.blueAccent,
-              ),
-              child: const Text(
-                'LOGIN',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 36, // Optional: adjust the font size if needed
-                ),
-              ),
-            ),
-
             // Second Container with Curved Top, Shadow, and ScrollView
             Expanded(
               child: Container(
@@ -159,11 +157,29 @@ class _LoginViewState extends State<LoginView> {
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const SignUpScreen()),
+                                MaterialPageRoute(builder: (context) => SignUpView()),
                               );
                             },
                             child: const Text(
                               "Sign Up",
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Forget password
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => SignUpView()),
+                              );
+                            },
+                            child: const Text(
+                              "Forget Password",
                               style: TextStyle(color: Colors.blue),
                             ),
                           ),
