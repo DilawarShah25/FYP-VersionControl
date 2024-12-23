@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Import image_picker
 import '../views/dashboard/profile_view.dart'; // Correct import if profile_screen.dart is in the 'screens' folder
 import '../views/dashboard/home_view.dart';
 import '../views/authentication/role_selection_view.dart';
 import '../views/dashboard/blog_view.dart';
+// import '../views/dashboard/timer_view.dart'; // Add this import for TimerView
 
 class ScreensManager extends StatefulWidget {
   const ScreensManager({super.key});
@@ -13,14 +13,13 @@ class ScreensManager extends StatefulWidget {
 }
 
 class _ScreensManagerState extends State<ScreensManager> {
-  final ImagePicker _picker = ImagePicker();
   int _selectedIndex = 0; // Track the selected tab index
 
   // List of pages/screens for each tab
   final List<Widget> _pages = [
     const HomeView(),
     const ProfileView(),
-    // const SocialPage(),
+    // const TimerView(), // Add TimerView to handle the Timer tab
   ];
 
   // Handle tab item tap
@@ -30,70 +29,86 @@ class _ScreensManagerState extends State<ScreensManager> {
     });
   }
 
-  // Show options to take a picture (camera/gallery)
-  void _showCameraOptions() {
-    showModalBottomSheet(
+  // Show custom popup menu
+  void _showPopupMenu(BuildContext context, Offset position) {
+    showMenu(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dy - 10, // Ensure alignment with the right-most edge
+        0,
       ),
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera, color: Colors.blue),
-                title: const Text('Camera',
-                    textAlign: TextAlign.start,
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                onTap: () async {
-                  final XFile? image =
-                  await _picker.pickImage(source: ImageSource.camera);
-                  if (image != null) {
-                    print("Picked image from camera: ${image.path}");
-                  }
-                  Navigator.pop(context);
-                },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.photo, color: Colors.blue),
-                title: const Text('Gallery',
-                    textAlign: TextAlign.start,
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                onTap: () async {
-                  final XFile? image =
-                  await _picker.pickImage(source: ImageSource.gallery);
-                  if (image != null) {
-                    print("Picked image from gallery: ${image.path}");
-                  }
-                  Navigator.pop(context);
-                },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.cancel, color: Colors.red),
-                title: const Text('Cancel',
-                    textAlign: TextAlign.start,
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
+      items: [
+        const PopupMenuItem(
+          value: 'Set Up Notification',
+          child: Text(
+            'Set Up Notification',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
+        ),
+        const PopupMenuItem(
+          value: 'Blog',
+          child: Text(
+            'Blog',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'FAQ',
+          child: Text(
+            'FAQ',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'LOGOUT',
+          child: Text(
+            'Logout',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+      elevation: 8.0,
+      color: Colors.black,
+    ).then((value) {
+      if (value == 'LOGOUT') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => RoleSelectionView()),
         );
-      },
-    );
+      } else if (value == 'FAQ') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const FaqView()),
+        );
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: _pages[_selectedIndex], // Display the selected page
+        child: _selectedIndex < _pages.length
+            ? _pages[_selectedIndex] // Display the selected page
+            : const Center(child: Text('Page not found')), // Fallback if index is invalid
       ),
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
@@ -102,16 +117,6 @@ class _ScreensManagerState extends State<ScreensManager> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // Home tab
-              IconButton(
-                onPressed: () => _onItemTapped(0),
-                icon: Icon(
-                  Icons.home,
-                  size: 30,
-                  color: _selectedIndex == 0 ? Colors.green : Colors.blue,
-                ),
-                tooltip: 'Home',
-              ),
               // Profile tab
               IconButton(
                 onPressed: () => _onItemTapped(1),
@@ -122,18 +127,17 @@ class _ScreensManagerState extends State<ScreensManager> {
                 ),
                 tooltip: 'Profile',
               ),
-              // Camera button in the center
-              FloatingActionButton(
-                onPressed: _showCameraOptions,
-                backgroundColor: Colors.red,
-                tooltip: 'Camera',
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: Colors.white,
-                  size: 30.0,
+              // Home tab
+              IconButton(
+                onPressed: () => _onItemTapped(0),
+                icon: Icon(
+                  Icons.home,
+                  size: 30,
+                  color: _selectedIndex == 0 ? Colors.green : Colors.blue,
                 ),
+                tooltip: 'Home',
               ),
-              // Timer/Other tab
+              // Timer tab
               IconButton(
                 onPressed: () => _onItemTapped(2),
                 icon: Icon(
@@ -141,78 +145,18 @@ class _ScreensManagerState extends State<ScreensManager> {
                   size: 30,
                   color: _selectedIndex == 2 ? Colors.green : Colors.blue,
                 ),
-                tooltip: 'Timer',
+                tooltip: 'Home',
               ),
-              // Popup Menu (optional)
-              PopupMenuButton(
-                color: Colors.black,
-                icon: Icon(
+              // Popup Menu
+              GestureDetector(
+                onTapDown: (TapDownDetails details) {
+                  _showPopupMenu(context, details.globalPosition);
+                },
+                child: Icon(
                   Icons.menu,
                   size: 30,
                   color: _selectedIndex == 3 ? Colors.green : Colors.blue,
                 ),
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'Set Up Notification',
-                    child: Text(
-                      'Set Up Notification',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'Blog',
-                    child: Text(
-                      'Blog',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'FAQ',
-                    child: Text(
-                      'FAQ',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'LOGOUT',
-                    child: Text(
-                      'Logout',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-                onSelected: (value) {
-                  if (value == 'LOGOUT') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => RoleSelectionView()),
-                    );
-                  }
-                  else if (value == 'FAQ') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const FaqView()),
-                    );
-                  }
-                },
               ),
             ],
           ),
