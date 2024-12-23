@@ -42,7 +42,7 @@ class _DetectionResultViewState extends State<DetectionResultView> {
     });
 
     try {
-      final url = Uri.parse('https://a8d3-182-184-194-228.ngrok-free.app/predict'); // Replace with Flask server URL
+      final url = Uri.parse('https://chigger-informed-mistakenly.ngrok-free.app/predict'); // Replace with Flask server URL
       final request = http.MultipartRequest('POST', url)
         ..files.add(await http.MultipartFile.fromPath('image', _image!.path));
 
