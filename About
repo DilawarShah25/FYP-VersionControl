@@ -3,7 +3,7 @@ lib/
 ├── controllers/
 │   ├── user_controller.dart        # Handles user-related logic (e.g., login, registration).
 │   ├── hair_loss_detection_controller.dart  # Coordinates image processing and AI logic.
-│   ├── progress_tracking_controller.dart    # Manages progress tracki ng and updates.
+│   ├── progress_tracking_controller.dart    # Manages progress track ng and updates.
 │   ├── social_controller.dart      # Controls social sharing and community features.
 │   ├── recommendation_controller.dart  # Handles personalized recommendations logic.
 │   └── screen_navigation_controller.dart   # Handles navigation between screens.
