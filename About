@@ -1,0 +1,64 @@
+lib/
+│
+├── controllers/
+│   ├── user_controller.dart        # Handles user-related logic (e.g., login, registration).
+│   ├── hair_loss_detection_controller.dart  # Coordinates image processing and AI logic.
+│   ├── progress_tracking_controller.dart    # Manages progress track ng and updates.
+│   ├── social_controller.dart      # Controls social sharing and community features.
+│   ├── recommendation_controller.dart  # Handles personalized recommendations logic.
+│   └── screen_navigation_controller.dart   # Handles navigation between screens.
+│
+├── models/
+│   ├── user_model.dart             # User-related data structure.
+│   ├── scalp_image_model.dart      # Data model for images (upload, processing).
+│   ├── progress_model.dart         # Tracks user's progress and history.
+│   └── dermatologist_model.dart    # Handles dermatologist data and recommendations.
+│
+├── views/
+│   ├── onboarding/
+│   │   ├── splash_view.dart        # Splash screen UI.
+│   │   └── onboarding_view.dart    # User onboarding flow.
+│   │
+│   ├── authentication/
+│   │   ├── login_view.dart         # Login screen UI.
+│   │   ├── signup_view.dart        # Signup screen UI.
+│   │   └── registration_view.dart  # Registration flow UI.
+│   │
+│   ├── dashboard/
+│   │   ├── home_view.dart          # Main dashboard/home screen.
+│   │   ├── profile_view.dart       # User profile screen.
+│   │   ├── community_view.dart     # Community and sharing UI.
+│   │   └── faq_view.dart           # FAQ screen UI.
+│   │
+│   ├── detection/
+│   │   ├── image_upload_view.dart  # Screen for uploading or taking images.
+│   │   ├── detection_results_view.dart  # Display of detection results.
+│   │   └── recommendations_view.dart   # Personalized recommendations UI.
+│   │
+│   └── progress/
+│       ├── progress_tracker_view.dart    # Tracks user's progress over time.
+│       └── progress_details_view.dart    # Detailed view of tracked progress.
+│
+├── utils/
+│   ├── constants.dart              # Global constants (e.g., API URLs, colors, strings).
+│   ├── validators.dart             # Input validation utilities.
+│   ├── theme.dart                  # App-wide theme and styling.
+│   └── helpers.dart                # Miscellaneous helper functions.
+│
+├── services/
+│   ├── api_service.dart            # Handles API calls (e.g., detection, recommendations).
+│   ├── image_processing_service.dart  # Processes scalp images for AI detection.
+│   ├── database_service.dart       # Manages local database (e.g., SQLite or Hive).
+│   └── notification_service.dart   # Sends reminders/notifications.
+│
+├── assets/
+│   ├── images/                     # Store static images for the app.
+│   ├── fonts/                      # App-specific fonts.
+│   └── icons/                      # Custom icons for the app.
+│
+├── tests/
+│   ├── unit/                       # Unit tests for individual components.
+│   ├── integration/                # Integration tests for combined components.
+│   └── widget/                     # Widget tests for the UI.
+│
+└── main.dart                       # Entry point of the application.

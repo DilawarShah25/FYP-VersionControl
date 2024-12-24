@@ -1,0 +1,121 @@
+frontend/
+│
+├── lib/
+│   ├── controllers/                     # Handles logic and state management
+│   │   ├── user_controller.dart         # Manages user logic (login, registration).
+│   │   ├── hair_loss_detection_controller.dart # Coordinates image processing API calls.
+│   │   ├── progress_tracking_controller.dart   # Manages progress tracking and updates.
+│   │   ├── social_controller.dart       # Controls social sharing and community features.
+│   │   ├── recommendation_controller.dart # Manages recommendations logic.
+│   │   └── screen_navigation_controller.dart  # Navigation between screens.
+│   │
+│   ├── models/                          # Data structures for Flutter
+│   │   ├── user_model.dart              # Represents user-related data.
+│   │   ├── scalp_image_model.dart       # Data model for images (upload, processing).
+│   │   ├── progress_model.dart          # Tracks user's progress and history.
+│   │   └── dermatologist_model.dart     # Handles dermatologist data and recommendations.
+│   │
+│   ├── views/                           # Screens and UI components
+│   │   ├── onboarding/
+│   │   │   ├── splash_view.dart         # Splash screen UI.
+│   │   │   └── onboarding_view.dart     # User onboarding flow.
+│   │   │
+│   │   ├── authentication/
+│   │   │   ├── login_view.dart          # Login screen UI.
+│   │   │   ├── signup_view.dart         # Signup screen UI.
+│   │   │   └── registration_view.dart   # Registration flow UI.
+│   │   │
+│   │   ├── dashboard/
+│   │   │   ├── home_view.dart           # Main dashboard/home screen.
+│   │   │   ├── profile_view.dart        # User profile screen.
+│   │   │   ├── community_view.dart      # Community and sharing UI.
+│   │   │   └── faq_view.dart            # FAQ screen UI.
+│   │   │
+│   │   ├── detection/
+│   │   │   ├── image_upload_view.dart   # Screen for uploading or taking images.
+│   │   │   ├── detection_results_view.dart # Displays detection results.
+│   │   │   └── recommendations_view.dart  # Personalized recommendations UI.
+│   │   │
+│   │   └── progress/                    # Progress-related screens
+│   │       ├── progress_tracker_view.dart # Tracks user's progress over time.
+│   │       └── progress_details_view.dart # Detailed view of tracked progress.
+│   │
+│   ├── utils/                           # Utilities and helpers
+│   │   ├── constants.dart               # Global constants (e.g., API URLs, strings).
+│   │   ├── validators.dart              # Input validation utilities.
+│   │   ├── theme.dart                   # App-wide theme and styling.
+│   │   └── helpers.dart                 # Miscellaneous helper functions.
+│   │
+│   ├── services/                        # Handles API communication and logic
+│   │   ├── api_service.dart             # General API call logic (GET, POST).
+│   │   ├── image_processing_service.dart # Manages image-related API calls.
+│   │   ├── database_service.dart        # Local database logic (e.g., SQLite/Hive).
+│   │   └── notification_service.dart    # Sends notifications and reminders.
+│   │
+│   ├── assets/                          # Static assets for the app
+│   │   ├── images/                      # Static images.
+│   │   ├── fonts/                       # Custom fonts.
+│   │   └── icons/                       # App-specific icons.
+│   │
+│   ├── tests/                           # Testing structure for Flutter
+│   │   ├── unit/                        # Unit tests for individual components.
+│   │   ├── integration/                 # Integration tests for combined features.
+│   │   └── widget/                      # Widget tests for UI components.
+│   │
+│   └── main.dart                        # Entry point for the Flutter app.
+│
+└── pubspec.yaml                         # Flutter project configurations.
+
+=====================================================================================
+
+backend/
+│
+├── controllers/                         # Handles logic and API routes
+│   ├── user_controller.py               # Manages user logic (login, registration).
+│   ├── detection_controller.py          # Image upload and detection API routes.
+│   ├── progress_controller.py           # Progress-related logic and API routes.
+│   └── recommendation_controller.py     # Recommendations API logic.
+│
+├── models/                              # Defines database schemas
+│   ├── user_model.py                    # Schema for user data.
+│   ├── scalp_image_model.py             # Schema for uploaded images.
+│   ├── progress_model.py                # Schema for tracking user progress.
+│   └── dermatologist_model.py           # Schema for dermatologist data.
+│
+├── views/                               # API endpoints (routes)
+│   ├── auth_views.py                    # User authentication endpoints.
+│   ├── detection_views.py               # Endpoints for image detection logic.
+│   ├── progress_views.py                # Endpoints for tracking progress.
+│   └── recommendation_views.py          # Endpoints for personalized tips.
+│
+├── services/                            # Business logic and integrations
+│   ├── image_processing_service.py      # AI/ML logic for scalp image analysis.
+│   ├── recommendation_service.py        # Generates personalized tips.
+│   ├── notification_service.py          # Manages reminders and notifications.
+│   └── database_service.py              # Database interaction utilities.
+│
+├── utils/                               # Helper functions and reusable logic
+│   ├── constants.py                     # Global constants like URLs and keys.
+│   ├── validators.py                    # Input validation logic.
+│   ├── logger.py                        # Logging utility.
+│   └── helpers.py                       # Miscellaneous utility functions.
+│
+├── migrations/                          # Database migrations
+│   ├── 0001_initial.py                  # Initial migration.
+│   └── 0002_scalp_images.py             # Migration for image-related features.
+│
+├── static/                              # Static files for backend
+│   ├── images/                          # Placeholder for uploaded images.
+│   ├── results/                         # Stores processed results.
+│   └── logs/                            # Log files for debugging.
+│
+├── tests/                               # Backend testing
+│   ├── test_controllers.py              # Tests for controllers.
+│   ├── test_models.py                   # Tests for models.
+│   ├── test_views.py                    # Tests for API endpoints.
+│   └── test_services.py                 # Tests for services.
+│
+├── requirements.txt                     # Python dependencies.
+├── config.py                            # App configurations.
+├── app.py                               # Main entry point for the backend.
+└── README.md                            # Backend documentation.
