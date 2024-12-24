@@ -1,6 +1,4 @@
-# camera_gallery
-
-A new Flutter project.
+Focuses on detecting scalp health and providing personalized solutions.
 
 ## Getting Started
 
