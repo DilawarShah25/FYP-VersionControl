@@ -1,13 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:convert';
-
-
-import '../../utils/circular_graph_painter.dart';
 
 class DetectionResultView extends StatefulWidget {
   final String title;
@@ -24,8 +19,6 @@ class DetectionResultView extends StatefulWidget {
 class _DetectionResultViewState extends State<DetectionResultView> {
   File? _image;
   bool _isProcessing = false;
-  String? _predictedLabel;
-  double? _confidence;
 
   Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
@@ -35,8 +28,6 @@ class _DetectionResultViewState extends State<DetectionResultView> {
       setState(() {
         _image = File(pickedFile.path);
         _isProcessing = false;
-        _predictedLabel = null;
-        _confidence = null;
       });
     }
   }
@@ -60,19 +51,13 @@ class _DetectionResultViewState extends State<DetectionResultView> {
         final responseData = json.decode(responseBody);
 
         setState(() {
-          _predictedLabel = responseData['predicted_label'];
-          _confidence = responseData['confidence'];
         });
       } else {
         setState(() {
-          _predictedLabel = 'Error';
-          _confidence = 0.0;
         });
       }
     } catch (e) {
       setState(() {
-        _predictedLabel = 'Error';
-        _confidence = 0.0;
       });
     } finally {
       setState(() {
@@ -144,8 +129,6 @@ class _DetectionResultViewState extends State<DetectionResultView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
         height: 400.0,
         width: double.infinity,
         decoration: BoxDecoration(
@@ -185,41 +168,9 @@ class _DetectionResultViewState extends State<DetectionResultView> {
             Expanded(
               child: _isProcessing
                   ? const CircularProgressIndicator()
-                  : (_predictedLabel != null && _confidence != null)
-                  ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        double size = min(constraints.maxWidth, constraints.maxHeight) * 0.7;
-                        return CustomPaint(
-                          size: Size(size, size),
-                          painter: CircularGraphPainter(confidence: _confidence!),
-                          child: Center(
-                            child: Text(
-                              _predictedLabel!,
                               style: const TextStyle(
-                                fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildLegendDot(Colors.green, 'Confidence: ${(_confidence! * 100).toStringAsFixed(2)}%'),
-                      const SizedBox(width: 20),
-                      _buildLegendDot(Colors.red, 'Remaining: ${(100 - _confidence! * 100).toStringAsFixed(2)}%'),
-                    ],
-                  ),
-                ],
               )
                   : _image != null
                   ? Image.file(
@@ -227,9 +178,6 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                 height: 200,
                 width: 200,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Text("Error loading image");
-                },
               )
                   : const Text(
                 "No Image Selected",
@@ -239,9 +187,6 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                 ),
               ),
             ),
-
-            // Buttons
-            if (_image != null && _predictedLabel == null)
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
@@ -286,23 +231,6 @@ class _DetectionResultViewState extends State<DetectionResultView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildLegendDot(Color color, String text) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 5),
-        Text(text),
-      ],
     );
   }
 }
-
-
