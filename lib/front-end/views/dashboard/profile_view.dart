@@ -49,7 +49,6 @@ class _ProfileViewState extends State<ProfileView> {
       }
     }
   }
-
   // Method to save the updated profile details
   void _saveProfile() {
     final String updatedUsername = _usernameController.text;

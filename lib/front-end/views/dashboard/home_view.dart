@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../slider/carousel_view.dart';
 import '../progress/progress_details_view.dart';
+import '../detection/detection_results_view.dart'; // Import DetectionResultView
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -19,7 +20,7 @@ class _HomeViewState extends State<HomeView> {
             child: Column(
               children: [
                 const SizedBox(
-                  height: 535.0,
+                  height: 535.0, // Keeping the original size for the carousel container
                   width: double.infinity,
                   child: Carousel(
                     images: [
@@ -27,122 +28,139 @@ class _HomeViewState extends State<HomeView> {
                       'lib/front-end/assets/images/carousel_item2.png',
                       'lib/front-end/assets/images/carousel_item3.png',
                     ],
-
                   ),
                 ),
                 Container(
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white54,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue[50]!, Colors.white],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Early Detection\nMakes a Difference',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 5.0),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          height: 340.0,
-                                          width: double.infinity,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.grey
-                                                    .withOpacity(0.2),
-                                                spreadRadius: 2,
-                                                blurRadius: 5,
-                                              ),
-                                            ],
-                                          ),
-                                          clipBehavior: Clip.hardEdge,
-                                          child: const PerformanceDetailsView(),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20.0),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          height: 150.0,
-                                          width: double.infinity,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.grey
-                                                    .withOpacity(0.2),
-                                                spreadRadius: 2,
-                                                blurRadius: 5,
-                                              ),
-                                            ],
-                                          ),
-                                          clipBehavior: Clip.hardEdge,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20.0),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          height: 150.0,
-                                          width: double.infinity,
-                                          decoration: BoxDecoration(
-                                            color: Colors.orange,
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.grey
-                                                    .withOpacity(0.2),
-                                                spreadRadius: 2,
-                                                blurRadius: 5,
-                                              ),
-                                            ],
-                                          ),
-                                          clipBehavior: Clip.hardEdge,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
                       ),
                     ],
                   ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Early Detection\nMakes a Difference',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // First Container
+                        Container(
+                          height: 350.0,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.blue[200]!, Colors.lightBlue[50]!],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                blurRadius: 15,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.blue[100]!, width: 1),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: const PerformanceDetailsView(),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Second Container
+                        Container(
+                          height: 410.0,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.lightGreen[100]!, Colors.lightGreen[50]!],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.greenAccent, width: 1.5),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: const DetectionResultView(
+                              title: 'Detection Result',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Third Container
+                        Container(
+                          height: 190.0,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.orange[200]!, Colors.orange[100]!],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.deepOrangeAccent, width: 1.5),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Add your content here',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.deepOrange[900],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                  ),
                 ),
+
               ],
             ),
           ),

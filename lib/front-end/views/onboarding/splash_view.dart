@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../authentication/registration_view.dart'; // Import the Registration screen
+import '../authentication/role_selection_view.dart'; // Import the Registration screen
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -17,7 +17,7 @@ class _SplashViewState extends State<SplashView> {
     Timer(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const RegistrationScreen()),
+        MaterialPageRoute(builder: (context) => RoleSelectionView()),
       );
     });
   }
