@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'sign_up.dart'; // Import the Signup Screen
-import '../dashboard/home_view.dart';   // Import the Home Screen (Assuming it's your home screen)
+import '../dashboard/other_dashboard/home_view.dart';   // Import the Home Screen (Assuming it's your home screen)
 import '../../controllers/screen_navigation_controller.dart';
 
 class AdminLoginView extends StatefulWidget {
@@ -21,6 +21,9 @@ class _AdminLoginViewState extends State<AdminLoginView> {
   // Dummy credentials for validation
   String dummyEmail = 'csdilawar@gmail.com';
   String dummyPassword = '1234';
+
+  // Password visibility state
+  bool _showPassword = false;
 
   // Function to validate login credentials
   void _validateLogin() {
@@ -56,143 +59,146 @@ class _AdminLoginViewState extends State<AdminLoginView> {
           ),
         ),
       ),
-      backgroundColor: Colors.blue, // Light background for better visibility
+      backgroundColor: Colors.blue,
       body: SafeArea(
-      child: Column(
-        children: [
-          // Second Container with Curved Top, Shadow, and ScrollView
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, -4),
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
-                ],
-              ),
-              child: SingleChildScrollView( // Enable scrolling if the content overflows
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 20),
-
-                    // Centered Logo Image
-                    Center(
-                      child: Image.asset(
-                        'lib/front-end/assets/icons/app_logo.png', // Replace with your image path
-                        height: 120, // Increased height for better visibility
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // Email TextField
-                    TextField(
-                      controller: emailController, // Set the controller to pre-fill email
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.email),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Password TextField
-                    TextField(
-                      controller: passwordController, // Set the controller to pre-fill password
-                      obscureText: true, // Hide the password text
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Error message display
-                    if (errorMessage != null) ...[
-                      Text(
-                        errorMessage!,
-                        style: TextStyle(color: Colors.red, fontSize: 14),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-
-                    // Login Button
-                    ElevatedButton(
-                      onPressed: _validateLogin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue, // Strong blue color for the button
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12), // Rounded corners for the button
-                        ),
-                      ),
-                      child: const Text(
-                        "LOGIN",
-                        style: TextStyle(
-                          fontSize: 20, // Larger text for better visibility
-                          fontWeight: FontWeight.bold, // Bold text for emphasis
-                          color: Colors.white, // White text for high contrast
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Login Prompt
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Create a new account"),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => SignUpView()),
-                            );
-                          },
-                          child: const Text(
-                            "Sign Up",
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Forget password
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => SignUpView()),
-                            );
-                          },
-                          child: const Text(
-                            "Forget Password",
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                        ),
-                      ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, -4),
                     ),
                   ],
                 ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+
+                      Center(
+                        child: Image.asset(
+                          'lib/front-end/assets/icons/app_logo.png',
+                          height: 120,
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      TextField(
+                        controller: emailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.email),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      TextField(
+                        controller: passwordController,
+                        obscureText: !_showPassword,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showPassword ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.blue,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showPassword = !_showPassword;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      if (errorMessage != null) ...[
+                        Text(
+                          errorMessage!,
+                          style: TextStyle(color: Colors.red, fontSize: 14),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+
+                      ElevatedButton(
+                        onPressed: _validateLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          "LOGIN",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Create a new account"),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => SignUpView()),
+                              );
+                            },
+                            child: const Text(
+                              "Sign Up",
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => SignUpView()),
+                              );
+                            },
+                            child: const Text(
+                              "Forget Password",
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 }

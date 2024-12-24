@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../authentication/role_selection_view.dart'; // Import the Registration screen
+import '../../controllers/role_controller.dart'; // Import the Registration screen
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -48,7 +48,14 @@ class _SplashViewState extends State<SplashView> {
                       fit: BoxFit.cover,
                     ),
                     shape: BoxShape.rectangle,
-                    borderRadius: BorderRadius.circular(8.0),
+                    borderRadius: BorderRadius.circular(20.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 30.0),

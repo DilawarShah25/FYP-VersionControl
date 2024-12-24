@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../authentication/role_selection_view.dart';
 import '../authentication/user_login_view.dart'; // Import additional views
-import '../dashboard/blog_view.dart';
-import '../dashboard/user_manual_view.dart';
-import '../dashboard/home_view.dart';
+import '../dashboard/other_dashboard/blog_view.dart';
+import '../dashboard/other_dashboard/user_manual_view.dart';
+import '../dashboard/other_dashboard/home_view.dart';
 class Carousel extends StatefulWidget {
   final List<String> images;
 
@@ -114,16 +113,16 @@ class _CarouselState extends State<Carousel> {
           Column(
             children: [
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 15.0),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Your Personal\n\t\t\t\t\tAI Dermatologist',
+                    'SCALP \n\t\t\t\t\t\tSENSE',
                     textAlign: TextAlign.start,
                     style: TextStyle(
-                      fontFamily: 'Sans-serif',
+                      fontFamily: 'CCZoinks',  // Change the fontFamily to 'CCZoinks'
                       color: Colors.white,
-                      fontSize: 25.0,
+                      fontSize: 30.0,
                       fontWeight: FontWeight.w900,
                       shadows: [
                         Shadow(
@@ -134,6 +133,7 @@ class _CarouselState extends State<Carousel> {
                       ],
                     ),
                   ),
+
                 ),
               ),
               Expanded(

@@ -47,3 +47,6 @@ flutter:
     - family: sans-serif
       fonts:
         - asset: lib/front-end/assets/fonts/SourceSans3-VariableFont_wght.ttf
+    - family: CCZoinks
+      fonts:
+        - asset: lib/front-end/assets/fonts/CCZoinks.ttf

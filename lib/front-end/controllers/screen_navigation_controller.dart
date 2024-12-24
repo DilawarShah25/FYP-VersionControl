@@ -1,103 +1,77 @@
 import 'package:flutter/material.dart';
-import '../views/dashboard/profile_view.dart'; // Correct import if profile_screen.dart is in the 'screens' folder
-import '../views/dashboard/home_view.dart';
-import '../views/authentication/role_selection_view.dart';
-import '../views/dashboard/blog_view.dart';
-// import '../views/dashboard/timer_view.dart'; // Add this import for TimerView
+import '../views/dashboard/other_dashboard/blog_view.dart';
+import '../views/dashboard/community_support_view/community_support_view.dart';
+import '../views/dashboard/other_dashboard/profile_view.dart';
+import '../views/dashboard/other_dashboard/home_view.dart';
+import 'role_controller.dart';
 
 class ScreensManager extends StatefulWidget {
-  const ScreensManager({super.key});
+  const ScreensManager({Key? key}) : super(key: key);
 
   @override
   State<ScreensManager> createState() => _ScreensManagerState();
 }
 
 class _ScreensManagerState extends State<ScreensManager> {
-  int _selectedIndex = 0; // Track the selected tab index
+  int _selectedIndex = 0;
 
-  // List of pages/screens for each tab
+  // Pages for each tab
   final List<Widget> _pages = [
     const HomeView(),
     const ProfileView(),
-    // const TimerView(), // Add TimerView to handle the Timer tab
+    const CommunitySupportView(),
   ];
 
-  // Handle tab item tap
+  // Handle tab selection
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index != 3) { // Only change the index if it's not the "More" item
+      setState(() {
+        _selectedIndex = index;
+      });
+    } else {
+      // Show the popup menu for the "More" item
+      _showPopupMenu(context);
+    }
   }
 
-  // Show custom popup menu
-  void _showPopupMenu(BuildContext context, Offset position) {
+  // Show popup menu
+  void _showPopupMenu(BuildContext context) {
+    // Get the position of the "More" icon
+    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
+
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(
-        position.dx,
-        position.dy,
-        position.dy - 10, // Ensure alignment with the right-most edge
+        overlay.size.width - 100, // Adjust this value to position the menu correctly
+        overlay.size.height - 100, // Adjust this value to position the menu correctly
+        0,
         0,
       ),
       items: [
         const PopupMenuItem(
           value: 'Set Up Notification',
-          child: Text(
-            'Set Up Notification',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
+          child: Text('Set Up Notification'),
         ),
         const PopupMenuItem(
-          value: 'Blog',
-          child: Text(
-            'Blog',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
+          value: 'BLOG',
+          child: Text('Blog'),
         ),
         const PopupMenuItem(
           value: 'FAQ',
-          child: Text(
-            'FAQ',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
+          child: Text('FAQ'),
         ),
         const PopupMenuItem(
           value: 'LOGOUT',
-          child: Text(
-            'Logout',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
+          child: Text('Logout'),
         ),
       ],
-      elevation: 8.0,
-      color: Colors.black,
     ).then((value) {
       if (value == 'LOGOUT') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => RoleSelectionView()),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => RoleSelectionView()));
+      } else if (value == 'BLOG') {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const FaqView()));
       } else if (value == 'FAQ') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const FaqView()),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const FaqView())); // Replace with FAQView
       }
     });
   }
@@ -105,61 +79,66 @@ class _ScreensManagerState extends State<ScreensManager> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, // Light background for better visibility
       body: SafeArea(
-        child: _selectedIndex < _pages.length
-            ? _pages[_selectedIndex] // Display the selected page
-            : const Center(child: Text('Page not found')), // Fallback if index is invalid
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: _pages,
+        ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
-        child: SizedBox(
-          height: 80,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              // Profile tab
-              IconButton(
-                onPressed: () => _onItemTapped(1),
-                icon: Icon(
-                  Icons.person,
-                  size: 30,
-                  color: _selectedIndex == 1 ? Colors.green : Colors.blue,
-                ),
-                tooltip: 'Profile',
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.only(bottom: 15, left: 10, right: 10), // Adjust margins to reduce size
+        decoration: BoxDecoration(
+          color: Colors.white, // Decent background color for the bottom bar
+          borderRadius: const BorderRadius.all(Radius.circular(15)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.6),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          backgroundColor: Colors.transparent, // Make the background transparent for the navigation bar
+          elevation: 0, // Remove default elevation
+          selectedItemColor: Colors.blueAccent,
+          unselectedItemColor: Colors.grey,
+          showSelectedLabels: true,
+          showUnselectedLabels: false,
+          type: BottomNavigationBarType.fixed,
+          items: [
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.home,
+                size: _selectedIndex == 0 ? 30 : 25,
               ),
-              // Home tab
-              IconButton(
-                onPressed: () => _onItemTapped(0),
-                icon: Icon(
-                  Icons.home,
-                  size: 30,
-                  color: _selectedIndex == 0 ? Colors.green : Colors.blue,
-                ),
-                tooltip: 'Home',
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.person,
+                size: _selectedIndex == 1 ? 30 : 25,
               ),
-              // Timer tab
-              IconButton(
-                onPressed: () => _onItemTapped(2),
-                icon: Icon(
-                  Icons.timer,
-                  size: 30,
-                  color: _selectedIndex == 2 ? Colors.green : Colors.blue,
-                ),
-                tooltip: 'Home',
+              label: 'Profile',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.groups,
+                size: _selectedIndex == 2 ? 30 : 25,
               ),
-              // Popup Menu
-              GestureDetector(
-                onTapDown: (TapDownDetails details) {
-                  _showPopupMenu(context, details.globalPosition);
-                },
-                child: Icon(
-                  Icons.menu,
-                  size: 30,
-                  color: _selectedIndex == 3 ? Colors.green : Colors.blue,
-                ),
+              label: 'Community',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.menu,
+                size: _selectedIndex == 3 ? 30 : 25,
               ),
-            ],
-          ),
+              label: 'More',
+            ),
+          ],
         ),
       ),
     );
