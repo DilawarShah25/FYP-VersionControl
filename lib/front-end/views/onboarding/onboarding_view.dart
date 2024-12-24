@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../dashboard/other_dashboard/home_view.dart';
 
 class OnboardingChecker extends StatefulWidget {
   const OnboardingChecker({super.key});
