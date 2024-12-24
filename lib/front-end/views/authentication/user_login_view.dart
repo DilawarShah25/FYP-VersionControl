@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'sign_up.dart'; // Import the Signup Screen
+import '../dashboard/other_dashboard/home_view.dart';   // Import the Home Screen (Assuming it's your home screen)
 import '../../controllers/screen_navigation_controller.dart';
 
 class UserLoginView extends StatefulWidget {
@@ -20,6 +21,9 @@ class _UserLoginViewState extends State<UserLoginView> {
   // Dummy credentials for validation
   String dummyEmail = 'csdilawar@gmail.com';
   String dummyPassword = '1234';
+
+  // Password visibility toggle
+  bool _showPassword = false;
 
   // Function to validate login credentials
   void _validateLogin() {
@@ -108,7 +112,21 @@ class _UserLoginViewState extends State<UserLoginView> {
                       // Password TextField
                       TextField(
                         controller: passwordController, // Set the controller to pre-fill password
+                        obscureText: !_showPassword, // Hide the password text
+                        decoration: InputDecoration(
                           labelText: 'Password',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showPassword ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showPassword = !_showPassword;
+                              });
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),

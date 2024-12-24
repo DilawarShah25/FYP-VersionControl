@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../authentication/user_login_view.dart'; // Import additional views
+import '../dashboard/other_dashboard/blog_view.dart';
+import '../dashboard/other_dashboard/user_manual_view.dart';
+import '../dashboard/other_dashboard/home_view.dart';
 class Carousel extends StatefulWidget {
   final List<String> images;
 
@@ -110,12 +113,16 @@ class _CarouselState extends State<Carousel> {
           Column(
             children: [
               const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 15.0),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
+                    'SCALP \n\t\t\t\t\t\tSENSE',
                     textAlign: TextAlign.start,
                     style: TextStyle(
+                      fontFamily: 'CCZoinks',  // Change the fontFamily to 'CCZoinks'
                       color: Colors.white,
+                      fontSize: 30.0,
                       fontWeight: FontWeight.w900,
                       shadows: [
                         Shadow(
@@ -126,6 +133,7 @@ class _CarouselState extends State<Carousel> {
                       ],
                     ),
                   ),
+
                 ),
               ),
               Expanded(

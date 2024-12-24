@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'sign_up.dart'; // Import the Signup Screen
+import '../dashboard/other_dashboard/home_view.dart';   // Import the Home Screen (Assuming it's your home screen)
 import '../../controllers/screen_navigation_controller.dart';
 
 class AdminLoginView extends StatefulWidget {
@@ -20,6 +21,9 @@ class _AdminLoginViewState extends State<AdminLoginView> {
   // Dummy credentials for validation
   String dummyEmail = 'csdilawar@gmail.com';
   String dummyPassword = '1234';
+
+  // Password visibility state
+  bool _showPassword = false;
 
   // Function to validate login credentials
   void _validateLogin() {
@@ -55,6 +59,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
           ),
         ),
       ),
+      backgroundColor: Colors.blue,
       body: SafeArea(
         child: Column(
           children: [
@@ -75,6 +80,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                     ),
                   ],
                 ),
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,12 +89,15 @@ class _AdminLoginViewState extends State<AdminLoginView> {
 
                       Center(
                         child: Image.asset(
+                          'lib/front-end/assets/icons/app_logo.png',
+                          height: 120,
                         ),
                       ),
 
                       const SizedBox(height: 40),
 
                       TextField(
+                        controller: emailController,
                         decoration: const InputDecoration(
                           labelText: 'Email',
                           border: OutlineInputBorder(),
@@ -98,7 +107,23 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                       const SizedBox(height: 20),
 
                       TextField(
+                        controller: passwordController,
+                        obscureText: !_showPassword,
+                        decoration: InputDecoration(
                           labelText: 'Password',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showPassword ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.blue,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showPassword = !_showPassword;
+                              });
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -114,13 +139,18 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                       ElevatedButton(
                         onPressed: _validateLogin,
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: const Text(
                           "LOGIN",
                           style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
                       ),
