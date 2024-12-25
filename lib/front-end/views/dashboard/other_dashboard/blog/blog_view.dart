@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'detail_screen.dart'; // Import the detail screen
 import 'blog_section.dart'; // Import the BlogSection widget
+import 'package:flutter_markdown/flutter_markdown.dart'; // Import the markdown package
 
 class BlogView extends StatefulWidget {
   const BlogView({super.key});
@@ -146,11 +146,11 @@ class _BlogViewState extends State<BlogView> {
     switch (destination) {
       case 'DetailScreen1':
         return '''
-## Hair Loss Types: Understanding Causes and Solutions
+# Hair Loss Types: Understanding Causes and Solutions
 
 Hair loss affects millions worldwide, impacting self-esteem and confidence. Identifying hair loss types and underlying causes enables effective treatment.
 
-### Types of Hair Loss
+## Types of Hair Loss
 
 - **Androgenetic Alopecia (Male/Female Pattern Baldness)**: Hormonal imbalance, genetics, and age-related.
 - **Alopecia Areata**: Autoimmune disease causing patchy hair loss.
@@ -160,23 +160,23 @@ Hair loss affects millions worldwide, impacting self-esteem and confidence. Iden
 - **Anagen Effluvium**: Chemotherapy-induced hair loss.
 - **Scarring Alopecia**: Permanent hair loss due to inflammation, injury, or infection.
 
-### Hormonal Hair Loss
+## Hormonal Hair Loss
 
 - **Male Hormonal Hair Loss**: Dihydrotestosterone (DHT) causes hair thinning.
 - **Female Hormonal Hair Loss**: Estrogen fluctuations, polycystic ovary syndrome (PCOS).
 - **Thyroid-Related Hair Loss**: Hypothyroidism or hyperthyroidism.
 
-### Other Causes
+## Other Causes
 
-- **Genetics**
-- **Stress**
-- **Nutritional Deficiencies (Iron, Vitamin D)**
-- **Hairstyling and Grooming**
-- **Infections (Fungal, Bacterial)**
-- **Autoimmune Disorders**
-- **Medications**
+- Genetics
+- Stress
+- Nutritional Deficiencies (Iron, Vitamin D)
+- Hairstyling and Grooming
+- Infections (Fungal, Bacterial)
+- Autoimmune Disorders
+- Medications
 
-### Symptoms 
+## Symptoms 
 
 - Thinning or falling hair
 - Balding spots
@@ -184,7 +184,7 @@ Hair loss affects millions worldwide, impacting self-esteem and confidence. Iden
 - Itchy scalp
 - Redness and inflammation
 
-### Treatment Options
+## Treatment Options
 
 - **Medications**: Minoxidil, Finasteride
 - **Low-Level Laser Therapy (LLLT)**
@@ -194,7 +194,7 @@ Hair loss affects millions worldwide, impacting self-esteem and confidence. Iden
 - **Reducing Stress**: Yoga, meditation
 - **Consult Dermatologist**: Professional guidance
 
-### Prevention
+## Prevention
 
 - Maintain a healthy diet
 - Reduce stress
@@ -204,7 +204,7 @@ Hair loss affects millions worldwide, impacting self-esteem and confidence. Iden
 - Protect from sun damage
 - Monitor hormonal balance
 
-### Conclusion
+## Conclusion
 
 Hair loss affects individuals differently. Understanding types, causes, and solutions empowers effective management. Consult professionals for personalized advice.
 ''';
@@ -219,5 +219,5 @@ Hair loss affects individuals differently. Understanding types, causes, and solu
         return 'Content not available';
     }
   }
-}
 
+}

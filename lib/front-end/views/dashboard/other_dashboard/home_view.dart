@@ -14,14 +14,18 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Container(
-            color: Colors.blue[50],
-            child: Column(
-              children: [
-                const SizedBox(
-                  height: 535.0, // Keeping the original size for the carousel container
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(550), // Custom height for the AppBar
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.white,
+          elevation: 4,
+          flexibleSpace: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 250, // Height for the carousel
                   width: double.infinity,
                   child: Carousel(
                     images: [
@@ -31,15 +35,26 @@ class _HomeViewState extends State<HomeView> {
                     ],
                   ),
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Container(
+            color: Colors.blue[50],
+            child: Column(
+              children: [
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [
                         Color(0xFFA5FECB),
                         Color(0xFF20BDFF),
                         Color(0xFF5433FF)
-                      ], // New gradient
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:scalpsense/front-end/views/dashboard/community_support_view/community_support_view.dart';
 import 'dart:async';
 import '../authentication/user_login_view.dart'; // Import additional views
+import '../dashboard/community_support_view/community_support_view.dart';
 import '../dashboard/other_dashboard/blog/blog_view.dart';
 import '../dashboard/other_dashboard/home_view.dart';
 class Carousel extends StatefulWidget {
   final List<String> images;
-
   const Carousel({
     super.key,
     required this.images,

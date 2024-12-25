@@ -1,3 +1,4 @@
+// lib/front-end/blog/blog_section.dart
 import 'package:flutter/material.dart';
 
 class BlogSection extends StatelessWidget {
