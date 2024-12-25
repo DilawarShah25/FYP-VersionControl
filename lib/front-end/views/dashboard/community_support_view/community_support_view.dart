@@ -10,53 +10,115 @@ class CommunitySupportView extends StatefulWidget {
 }
 
 class _CommunitySupportViewState extends State<CommunitySupportView> {
-  final CommunitySupportController _controller = CommunitySupportController();
+  final ChatController _chatController = ChatController();
+  final TextEditingController _textController = TextEditingController();
+  List<String> _selectedImages = [];
+
+  void _handleSendMessage() {
+    if (_textController.text.isNotEmpty || _selectedImages.isNotEmpty) {
+      _chatController.sendMessage("CurrentUser", _textController.text, true, imageUrls: _selectedImages);
+      _textController.clear();
+      _selectedImages = [];
+      setState(() {});
+    }
+  }
+
+  void _pickImages() async {
+    _selectedImages = await _chatController.pickImages();
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Community Support'),
-        backgroundColor: Colors.blue,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      backgroundColor: Colors.blue, // Light background for better visibility
+      body: SafeArea(
         child: Column(
           children: [
-            // Text Input for Post
-            PostInputField(
-              controller: _controller.postController,
-              onImageUpload: _controller.addImages,
-              images: _controller.images,
-            ),
-            const SizedBox(height: 10),
-            // Submit Button
-            ElevatedButton(
-              onPressed: _controller.addPost,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+            // First Container with Title
+            Container(
+              height: 80.0,
+              width: double.infinity,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Colors.blueAccent,
               ),
               child: const Text(
-                'Post',
+                'Community Support',
                 style: TextStyle(
-                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
+                  fontSize: 36,
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            // List of Posts
+
+            // Second Container with Curved Top, Shadow, and ScrollView
             Expanded(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  return PostList(posts: _controller.posts, currentUser: _controller.currentUser);
-                },
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+
+                      // Chat Messages
+                      ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: _chatController.messages.length,
+                        itemBuilder: (context, index) {
+                          final message = _chatController.messages[index];
+                          return ChatMessageWidget(message: message);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Input Field
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.photo),
+                    onPressed: _pickImages,
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      decoration: const InputDecoration(
+                        hintText: 'Type a message',
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    onPressed: _handleSendMessage,
+                  ),
+                ],
               ),
             ),
           ],

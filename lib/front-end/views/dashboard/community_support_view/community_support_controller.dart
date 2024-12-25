@@ -1,35 +1,26 @@
-import 'package:flutter/material.dart';
-import 'community_support_model.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'community_support_service.dart';
+import 'community_support_model.dart';
 
-class CommunitySupportController extends ChangeNotifier {
-  final TextEditingController postController = TextEditingController();
-  final List<Post> posts = [];
-  final List<File> images = [];
-  final String currentUser = "currentUser"; // Placeholder for the current user
+class ChatController {
+  final ChatService _chatService = ChatService();
+  final ImagePicker _picker = ImagePicker();
 
-  void addPost() {
-    if (postController.text.isNotEmpty || images.isNotEmpty) {
-      posts.add(Post(
-        username: currentUser,
-        content: postController.text,
-        images: images,
-        timestamp: DateTime.now(),
-      ));
-      postController.clear();
-      images.clear();
-      notifyListeners();
-    }
+  List<ChatMessage> get messages => _chatService.messages;
+
+  void sendMessage(String userName, String message, bool isCurrentUser, {List<String>? imageUrls}) {
+    final newMessage = ChatMessage(
+      userName: userName,
+      message: message,
+      time: DateTime.now(),
+      isCurrentUser: isCurrentUser,
+      imageUrls: imageUrls,
+    );
+    _chatService.addMessage(newMessage);
   }
 
-  Future<void> addImages() async {
-    final ImagePicker picker = ImagePicker();
-    final List<XFile>? pickedFiles = await picker.pickMultiImage();
-
-    if (pickedFiles != null && pickedFiles.isNotEmpty) {
-      images.addAll(pickedFiles.map((xfile) => File(xfile.path)).toList());
-      notifyListeners();
-    }
+  Future<List<String>> pickImages() async {
+    final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+    return pickedFiles?.map((file) => file.path).toList() ?? [];
   }
 }

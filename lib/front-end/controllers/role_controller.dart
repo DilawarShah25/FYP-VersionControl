@@ -46,7 +46,7 @@ class _RoleSelectionViewState extends State<RoleSelectionView> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF7B42F6), Color(0xFFB55DF6)],
+            colors: [Color(0xFF4A148C), Color(0xFF7B1FA2)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -135,7 +135,7 @@ class RoleCard extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isSelected ? [Color(0xFF1E88E5), Color(0xFF6AB7FF)] : [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+            colors: isSelected ? [Color(0xFF6A1B9A), Color(0xFFAB47BC)] : [Color(0xFF4A148C), Color(0xFF7B1FA2)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -171,5 +171,3 @@ class RoleCard extends StatelessWidget {
     );
   }
 }
-
-

@@ -1,209 +1,145 @@
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'community_support_model.dart';
 
-class PostInputField extends StatelessWidget {
-  final TextEditingController controller;
-  final Future<void> Function() onImageUpload;
-  final List<File> images;
+class ChatMessageWidget extends StatelessWidget {
+  final ChatMessage message;
 
-  const PostInputField({super.key, required this.controller, required this.onImageUpload, required this.images});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: 'Write your post here...',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: onImageUpload,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          child: const Text(
-            'Upload Images',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        if (images.isNotEmpty)
-          SizedBox(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: images.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Image.file(
-                    images[index],
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                  ),
-                );
-              },
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class PostList extends StatelessWidget {
-  final List<Post> posts;
-  final String currentUser;
-
-  const PostList({super.key, required this.posts, required this.currentUser});
-
-  String _formatTimestamp(DateTime timestamp) {
-    return "${timestamp.hour % 12 == 0 ? 12 : timestamp.hour % 12}:${timestamp.minute.toString().padLeft(2, '0')} ${timestamp.hour >= 12 ? 'PM' : 'AM'}";
-  }
+  const ChatMessageWidget({
+    super.key,
+    required this.message,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return posts.isNotEmpty
-        ? ListView.builder(
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        final post = posts[index];
-        final bool isCurrentUser = post.username == currentUser;
-        return Container(
-          alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
-          child: Stack(
-            children: [
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: isCurrentUser ? Colors.lightGreen[100] : Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      blurRadius: 5,
-                      offset: const Offset(0, 4),
+    final bool isCurrentUser = message.isCurrentUser;
+
+    return Align(
+      alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: isCurrentUser ? Colors.lightGreen[200] : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment:
+          isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isCurrentUser)
+                  CircleAvatar(
+                    backgroundColor: Colors.blue,
+                    child: Text(
+                      message.userName[0].toUpperCase(),
+                      style: const TextStyle(color: Colors.white),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (!isCurrentUser)
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.blue,
-                            child: Text(
-                              post.username[0].toUpperCase(),
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            post.username,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    if (!isCurrentUser) const SizedBox(height: 10),
-                    Text(post.content),
-                    if (post.images.isNotEmpty)
-                      SizedBox(
-                        height: 100,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: post.images.length,
-                          itemBuilder: (context, imgIndex) {
-                            return Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Image.file(
-                                post.images[imgIndex],
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                              ),
-                            );
-                          },
+                  ),
+                if (!isCurrentUser) const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: isCurrentUser
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          _formatDate(message.time),
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        _formatTimestamp(post.timestamp),
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      if (message.imageUrls != null && message.imageUrls!.isNotEmpty)
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: message.imageUrls!
+                              .map((url) => url.startsWith('http')
+                              ? Image.network(
+                            url,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          )
+                              : Image.file(
+                            File(url),
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ))
+                              .toList(),
+                        ),
+                      if (message.message.isNotEmpty) const SizedBox(height: 8),
+                      if (message.message.isNotEmpty)
+                        Text(
+                          message.message,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      const SizedBox(height: 4),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Text(
+                          _formatTimestamp(message.time),
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Positioned(
-                top: -10,
-                left: isCurrentUser ? null : 10,
-                right: isCurrentUser ? 10 : null,
-                child: CustomPaint(
-                  painter: ChatBubbleArrowPainter(isCurrentUser: isCurrentUser),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    )
-        : const Center(
-      child: Text(
-        'No posts yet. Be the first to post!',
-        style: TextStyle(fontSize: 16, color: Colors.grey),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-class ChatBubbleArrowPainter extends CustomPainter {
-  final bool isCurrentUser;
-
-  ChatBubbleArrowPainter({required this.isCurrentUser});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = isCurrentUser ? Colors.lightGreen[100]! : Colors.white
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    if (isCurrentUser) {
-      path.moveTo(size.width, size.height);
-      path.lineTo(size.width - 10, size.height - 10);
-      path.lineTo(size.width, size.height - 20);
-    } else {
-      path.moveTo(0, size.height);
-      path.lineTo(10, size.height - 10);
-      path.lineTo(0, size.height - 20);
-    }
-    path.close();
-
-    canvas.drawPath(path, paint);
+  String _formatTimestamp(DateTime timestamp) {
+    final hours = timestamp.hour % 12 == 0 ? 12 : timestamp.hour % 12;
+    final minutes = timestamp.minute.toString().padLeft(2, '0');
+    final ampm = timestamp.hour >= 12 ? 'PM' : 'AM';
+    return '$hours:$minutes $ampm';
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
+  String _formatDate(DateTime timestamp) {
+    final day = timestamp.day;
+    final month = _getMonthName(timestamp.month);
+    final year = timestamp.year;
+    final suffix = _getDaySuffix(day);
+    return '$month $day$suffix, $year';
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return months[month - 1];
+  }
+
+  String _getDaySuffix(int day) {
+    if (day >= 11 && day <= 13) {
+      return 'th';
+    }
+    switch (day % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+    }
   }
 }
