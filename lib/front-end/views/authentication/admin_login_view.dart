@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'sign_up.dart'; // Import the Signup Screen
-import '../dashboard/other_dashboard/home_view.dart';   // Import the Home Screen (Assuming it's your home screen)
+import '../dashboard/other_dashboard/home_view.dart'; // Import the Home Screen (Assuming it's your home screen)
 import '../../controllers/screen_navigation_controller.dart';
 
 class AdminLoginView extends StatefulWidget {
@@ -43,80 +43,99 @@ class _AdminLoginViewState extends State<AdminLoginView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: const Text(
-          'Admin Login',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+      body: Container(
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)],  // Matching gradient
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
-      ),
-      backgroundColor: Colors.blue,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, -4),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  height: 300,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)],  // Matching gradient
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(100),
+                      bottomRight: Radius.circular(100),
+                    ),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 20),
-
-                      Center(
-                        child: Image.asset(
-                          'lib/front-end/assets/icons/app_logo.png',
-                          height: 120,
+                      Text(
+                        '  Welcome Back  ',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-
-                      const SizedBox(height: 40),
-
+                      SizedBox(height: 20),
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.admin_panel_settings,
+                          size: 40,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        "Admin",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(30.0),
+                  child: Column(
+                    children: [
                       TextField(
                         controller: emailController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Email',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.email),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          prefixIcon: const Icon(Icons.email, color: Colors.white),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
                         ),
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
                       ),
                       const SizedBox(height: 20),
-
                       TextField(
                         controller: passwordController,
                         obscureText: !_showPassword,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.lock),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          prefixIcon: const Icon(Icons.lock, color: Colors.white),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _showPassword ? Icons.visibility : Icons.visibility_off,
-                              color: Colors.blue,
+                              color: Colors.white,
                             ),
                             onPressed: () {
                               setState(() {
@@ -124,42 +143,67 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                               });
                             },
                           ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
                         ),
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
                       ),
                       const SizedBox(height: 20),
-
-                      if (errorMessage != null) ...[
-                        Text(
-                          errorMessage!,
-                          style: TextStyle(color: Colors.red, fontSize: 14),
+                      if (errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: Text(
+                            errorMessage!,
+                            style: const TextStyle(color: Colors.red, fontSize: 14),
+                          ),
                         ),
-                        const SizedBox(height: 10),
-                      ],
-
                       ElevatedButton(
                         onPressed: _validateLogin,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          minimumSize: const Size(double.infinity, 50),
+                          foregroundColor: Colors.blueAccent,
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 20),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                         ),
                         child: const Text(
-                          "LOGIN",
+                          'Login',
                           style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold, // Bolded text
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: () {
+                          // Handle forgot password logic here
+                        },
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(
                             color: Colors.white,
+                            fontWeight: FontWeight.bold, // Bolded text
+                            decoration: TextDecoration.none,
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Create a new account"),
+                          const Text(
+                            "Create a new account",
+                            style: TextStyle(color: Colors.white),
+                          ),
                           TextButton(
                             onPressed: () {
                               Navigator.push(
@@ -169,24 +213,11 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                             },
                             child: const Text(
                               "Sign Up",
-                              style: TextStyle(color: Colors.blue),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => SignUpView()),
-                              );
-                            },
-                            child: const Text(
-                              "Forget Password",
-                              style: TextStyle(color: Colors.blue),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold, // Bolded text
+                                decoration: TextDecoration.none,
+                              ),
                             ),
                           ),
                         ],
@@ -194,9 +225,9 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

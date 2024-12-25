@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'sign_up.dart'; // Import the Signup Screen
-import '../dashboard/other_dashboard/home_view.dart';   // Import the Home Screen (Assuming it's your home screen)
+import '../dashboard/other_dashboard/home_view.dart'; // Import the Home Screen (Assuming it's your home screen)
 import '../../controllers/screen_navigation_controller.dart';
 
 class UserLoginView extends StatefulWidget {
@@ -43,83 +43,99 @@ class _UserLoginViewState extends State<UserLoginView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: const Text(
-          'User Login',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+      body: Container(
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)], // Matching gradient
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
-      ),
-      backgroundColor: Colors.blue, // Light background for better visibility
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Second Container with Curved Top, Shadow, and ScrollView
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, -4),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  height: 300,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)], // Matching gradient
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                child: SingleChildScrollView( // Enable scrolling if the content overflows
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(100),
+                      bottomRight: Radius.circular(100),
+                    ),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 20),
-
-                      // Centered Logo Image
-                      Center(
-                        child: Image.asset(
-                          'lib/front-end/assets/icons/app_logo.png', // Replace with your image path
-                          height: 120, // Increased height for better visibility
+                      Text(
+                        '  Welcome Back  ',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-
-                      const SizedBox(height: 40),
-
-                      // Email TextField
+                      SizedBox(height: 20),
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        "USER",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(30.0),
+                  child: Column(
+                    children: [
                       TextField(
-                        controller: emailController, // Set the controller to pre-fill email
-                        decoration: const InputDecoration(
+                        controller: emailController,
+                        decoration: InputDecoration(
                           labelText: 'Email',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.email),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          prefixIcon: const Icon(Icons.email, color: Colors.white),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
                         ),
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
                       ),
                       const SizedBox(height: 20),
-
-                      // Password TextField
                       TextField(
-                        controller: passwordController, // Set the controller to pre-fill password
-                        obscureText: !_showPassword, // Hide the password text
+                        controller: passwordController,
+                        obscureText: !_showPassword,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.lock),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          prefixIcon: const Icon(Icons.lock, color: Colors.white),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _showPassword ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.white,
                             ),
                             onPressed: () {
                               setState(() {
@@ -127,45 +143,66 @@ class _UserLoginViewState extends State<UserLoginView> {
                               });
                             },
                           ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
                         ),
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
                       ),
                       const SizedBox(height: 20),
-
-                      // Error message display
-                      if (errorMessage != null) ...[
-                        Text(
-                          errorMessage!,
-                          style: TextStyle(color: Colors.red, fontSize: 14),
+                      if (errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: Text(
+                            errorMessage!,
+                            style: const TextStyle(color: Colors.red, fontSize: 14),
+                          ),
                         ),
-                        const SizedBox(height: 10),
-                      ],
-
-                      // Login Button
                       ElevatedButton(
                         onPressed: _validateLogin,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue, // Strong blue color for the button
-                          minimumSize: const Size(double.infinity, 50),
+                          foregroundColor: Colors.blueAccent, backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 20),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12), // Rounded corners for the button
+                            borderRadius: BorderRadius.circular(20),
                           ),
                         ),
                         child: const Text(
-                          "LOGIN",
+                          'Login',
                           style: TextStyle(
-                            fontSize: 20, // Larger text for better visibility
-                            fontWeight: FontWeight.bold, // Bold text for emphasis
-                            color: Colors.white, // White text for high contrast
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold, // Bolded text
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: () {
+                          // Handle forgot password logic here
+                        },
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold, // Bolded text
+                            decoration: TextDecoration.none,
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
-
-                      // Login Prompt
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Create a new account"),
+                          const Text(
+                            "Create a new account",
+                            style: TextStyle(color: Colors.white),
+                          ),
                           TextButton(
                             onPressed: () {
                               Navigator.push(
@@ -175,25 +212,11 @@ class _UserLoginViewState extends State<UserLoginView> {
                             },
                             child: const Text(
                               "Sign Up",
-                              style: TextStyle(color: Colors.blue),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Forget password
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => SignUpView()),
-                              );
-                            },
-                            child: const Text(
-                              "Forget Password",
-                              style: TextStyle(color: Colors.blue),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold, // Bolded text
+                                decoration: TextDecoration.none,
+                              ),
                             ),
                           ),
                         ],
@@ -201,9 +224,9 @@ class _UserLoginViewState extends State<UserLoginView> {
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

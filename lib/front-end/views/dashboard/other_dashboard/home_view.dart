@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../slider/carousel_view.dart';
+import '../../detection/detection_results_view.dart';
 import '../../progress/progress_details_view.dart';
-import '../../detection/detection_results_view.dart'; // Import DetectionResultView
+import '../../slider/carousel_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
+
   @override
   State<HomeView> createState() => _HomeViewState();
 }
@@ -20,7 +21,7 @@ class _HomeViewState extends State<HomeView> {
             child: Column(
               children: [
                 const SizedBox(
-                  height: 535.0,
+                  height: 535.0, // Keeping the original size for the carousel container
                   width: double.infinity,
                   child: Carousel(
                     images: [
@@ -34,7 +35,11 @@ class _HomeViewState extends State<HomeView> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.blue[50]!, Colors.white],
+                      colors: [
+                        Color(0xFFA5FECB),
+                        Color(0xFF20BDFF),
+                        Color(0xFF5433FF)
+                      ], // New gradient
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -44,7 +49,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
+                        color: Colors.grey.withOpacity(0.5),
                         blurRadius: 10,
                         offset: const Offset(0, -2),
                       ),
@@ -64,37 +69,92 @@ class _HomeViewState extends State<HomeView> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        _buildCard(
-                          height: 350,
-                          gradient: LinearGradient(
-                            colors: [Colors.blue[200]!, Colors.lightBlue[50]!],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+
+                        // First Container
+                        Container(
+                          height: 350.0,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.blue[200]!,
+                                Colors.lightBlue[50]!
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                blurRadius: 15,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.blue[100]!, width: 1),
                           ),
-                          shadowColor: Colors.grey.withOpacity(0.3),
-                          widget: const PerformanceDetailsView(),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: const PerformanceDetailsView(),
+                          ),
                         ),
                         const SizedBox(height: 20),
-                        _buildCard(
-                          height: 390,
-                          gradient: LinearGradient(
-                            colors: [Colors.lightGreen[100]!, Colors.lightGreen[50]!],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+
+                        // Second Container
+                        Container(
+                          height: 390.0,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.lightGreen[100]!,
+                                Colors.lightGreen[50]!
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.greenAccent, width: 1.5),
                           ),
-                          shadowColor: Colors.black.withOpacity(0.1),
-                          widget: const DetectionResultView(title: 'Detection Result'),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: const DetectionResultView(
+                              title: 'Detection Result',
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 20),
-                        _buildCard(
-                          height: 190,
-                          gradient: LinearGradient(
-                            colors: [Colors.orange[200]!, Colors.orange[100]!],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
+
+                        // Third Container
+                        Container(
+                          height: 190.0,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.orange[200]!, Colors.orange[100]!],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.deepOrangeAccent, width: 1.5),
                           ),
-                          shadowColor: Colors.black.withOpacity(0.1),
-                          widget: Center(
+                          child: Center(
                             child: Text(
                               'Add your content here',
                               style: TextStyle(
@@ -109,39 +169,11 @@ class _HomeViewState extends State<HomeView> {
                       ],
                     ),
                   ),
-                ),
+                )
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildCard({
-    required double height,
-    required Gradient gradient,
-    required Color shadowColor,
-    required Widget widget,
-  }) {
-    return Container(
-      height: height,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: gradient,
-        boxShadow: [
-          BoxShadow(
-            color: shadowColor,
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.blue[100]!, width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: widget,
       ),
     );
   }

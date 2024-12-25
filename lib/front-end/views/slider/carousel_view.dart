@@ -63,7 +63,7 @@ class _CarouselState extends State<Carousel> {
       case 2:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const FaqView()),
+          MaterialPageRoute(builder: (context) => const BlogView()),
         );
         break;
       default:

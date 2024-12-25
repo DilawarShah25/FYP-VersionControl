@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignUpView extends StatefulWidget {
   @override
@@ -6,10 +7,10 @@ class SignUpView extends StatefulWidget {
 }
 
 class _SignUpViewState extends State<SignUpView> {
-  final TextEditingController _nameController = TextEditingController(text: 'John Doe');
-  final TextEditingController _emailController = TextEditingController(text: 'johndoe@example.com');
-  final TextEditingController _passwordController = TextEditingController(text: 'password');
-  final TextEditingController _confirmPasswordController = TextEditingController(text: 'password');
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   String? errorMessage;
   String _selectedRole = 'User';
@@ -25,11 +26,18 @@ class _SignUpViewState extends State<SignUpView> {
     return password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
   }
 
-  void _register() {
-    final name = _nameController.text;
-    final email = _emailController.text;
+  Future<void> _register() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      setState(() {
+        errorMessage = 'All fields are required.';
+      });
+      return;
+    }
 
     if (!_isValidEmail(email)) {
       setState(() {
@@ -52,146 +60,156 @@ class _SignUpViewState extends State<SignUpView> {
       return;
     }
 
+    // Save user data
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', name);
+    await prefs.setString('email', email);
+    await prefs.setString('role', _selectedRole);
+
     setState(() {
       errorMessage = null;
     });
 
+    // Show success dialog
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Success'),
+        title: const Text('Success'),
         content: Text('Registered successfully as $_selectedRole.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context); // Go back to the previous screen
+            },
+            child: const Text('OK'),
           ),
         ],
       ),
     );
-
-    print('Register as $_selectedRole: Name - $name, Email - $email, Password - $password');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: const Text(
-          'Register',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+      body: Container(
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
-      ),
-      backgroundColor: Colors.blue,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Container with curved top and shadow
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, -4),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  height: 300,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(100),
+                      bottomRight: Radius.circular(100),
+                    ),
+                  ),
+                  child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 10),
-                      Image.asset(
-                        'lib/front-end/assets/icons/app_logo.png',
-                        height: 120,
+                      Text(
+                        'Register',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Register As',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      SizedBox(height: 20),
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.person_add_alt_1,
+                          size: 40,
+                          color: Colors.blueAccent,
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Radio<String>(
-                            value: 'Admin',
-                            groupValue: _selectedRole,
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedRole = value!;
-                              });
-                            },
-                          ),
-                          const Text('Admin'),
-                          const SizedBox(width: 20),
-                          Radio<String>(
-                            value: 'User',
-                            groupValue: _selectedRole,
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedRole = value!;
-                              });
-                            },
-                          ),
-                          const Text('User'),
-                        ],
+                      SizedBox(height: 10),
+                      Text(
+                        "Create a new account",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(30.0),
+                  child: Column(
+                    children: [
+                      // Name TextField
                       TextField(
                         controller: _nameController,
                         decoration: InputDecoration(
                           labelText: 'Name',
+                          labelStyle: const TextStyle(color: Colors.white),
+                          prefixIcon: const Icon(Icons.person, color: Colors.white),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
                           ),
-                          prefixIcon: Icon(Icons.person, color: Colors.blue),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
                         ),
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
+
+                      // Email TextField
                       TextField(
                         controller: _emailController,
                         decoration: InputDecoration(
                           labelText: 'Email',
+                          labelStyle: const TextStyle(color: Colors.white),
+                          prefixIcon: const Icon(Icons.email, color: Colors.white),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
                           ),
-                          prefixIcon: Icon(Icons.email, color: Colors.blue),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
                         ),
                         keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
+
+                      // Password TextField
                       TextField(
                         controller: _passwordController,
+                        obscureText: !_showPassword,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          prefixIcon: Icon(Icons.lock, color: Colors.blue),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          prefixIcon: const Icon(Icons.lock, color: Colors.white),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _showPassword ? Icons.visibility : Icons.visibility_off,
-                              color: Colors.blue,
+                              color: Colors.white,
                             ),
                             onPressed: () {
                               setState(() {
@@ -199,22 +217,32 @@ class _SignUpViewState extends State<SignUpView> {
                               });
                             },
                           ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
                         ),
-                        obscureText: !_showPassword,
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
+
+                      // Confirm Password TextField
                       TextField(
                         controller: _confirmPasswordController,
+                        obscureText: !_showConfirmPassword,
                         decoration: InputDecoration(
                           labelText: 'Confirm Password',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          prefixIcon: Icon(Icons.lock, color: Colors.blue),
+                          labelStyle: const TextStyle(color: Colors.white),
+                          prefixIcon: const Icon(Icons.lock, color: Colors.white),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _showConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                              color: Colors.blue,
+                              color: Colors.white,
                             ),
                             onPressed: () {
                               setState(() {
@@ -222,24 +250,111 @@ class _SignUpViewState extends State<SignUpView> {
                               });
                             },
                           ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.white),
+                          ),
                         ),
-                        obscureText: !_showConfirmPassword,
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
+
+                      // Role selection (Admin or User)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Admin Radio Button
+                          Container(
+                            width: 120,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: _selectedRole == 'Admin' ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: Colors.blueAccent, // Border color
+                                width: 2,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Radio<String>(
+                                  value: 'Admin',
+                                  groupValue: _selectedRole,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedRole = value!;
+                                    });
+                                  },
+                                  activeColor: Colors.blueAccent,
+                                ),
+                                Text(
+                                  'Admin',
+                                  style: TextStyle(
+                                    color: _selectedRole == 'Admin' ? Colors.blueAccent : Colors.white,
+                                    fontWeight: _selectedRole == 'Admin' ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          // User Radio Button
+                          Container(
+                            width: 120,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: _selectedRole == 'User' ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: Colors.blueAccent, // Border color
+                                width: 2,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Radio<String>(
+                                  value: 'User',
+                                  groupValue: _selectedRole,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedRole = value!;
+                                    });
+                                  },
+                                  activeColor: Colors.blueAccent,
+                                ),
+                                Text(
+                                  'User',
+                                  style: TextStyle(
+                                    color: _selectedRole == 'User' ? Colors.blueAccent : Colors.white,
+                                    fontWeight: _selectedRole == 'User' ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                       if (errorMessage != null) ...[
-                        Text(
-                          errorMessage!,
-                          style: const TextStyle(color: Colors.red, fontSize: 14),
-                        ),
                         const SizedBox(height: 10),
+                        Text(errorMessage!, style: const TextStyle(color: Colors.red)),
                       ],
+                      const SizedBox(height: 20),
+
+                      // Register Button
                       ElevatedButton(
                         onPressed: _register,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
+                          backgroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                         ),
                         child: const Text(
@@ -247,27 +362,39 @@ class _SignUpViewState extends State<SignUpView> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Colors.blue,
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Login Link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Already have an account?", style: TextStyle(color: Colors.white)),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context); // Go back to the previous screen
+                            },
+                            child: const Text(
+                              "Login",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
   }
 }

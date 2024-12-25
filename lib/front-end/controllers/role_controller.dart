@@ -30,25 +30,12 @@ class _RoleSelectionViewState extends State<RoleSelectionView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Select Role',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: Colors.deepPurple,
-        elevation: 5.0,
-        centerTitle: true,
-      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF4A148C), Color(0xFF7B1FA2)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            colors: [Color(0xFF3A7BD5), Color(0xFF00D2FF)], // Vibrant gradient
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         child: Padding(
@@ -60,14 +47,14 @@ class _RoleSelectionViewState extends State<RoleSelectionView> {
               const Text(
                 'Who Are You?',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 30,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                   shadows: [
                     Shadow(
                       blurRadius: 10.0,
                       color: Colors.black54,
-                      offset: Offset(0, 2),
+                      offset: Offset(0, 3),
                     ),
                   ],
                 ),
@@ -89,18 +76,29 @@ class _RoleSelectionViewState extends State<RoleSelectionView> {
               ),
               const SizedBox(height: 30),
               if (_selectedRole.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'You have selected: $_selectedRole',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white70,
+                AnimatedOpacity(
+                  opacity: 1.0,
+                  duration: const Duration(milliseconds: 500),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10.0,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'You have selected: $_selectedRole',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueGrey,
+                      ),
                     ),
                   ),
                 ),
@@ -130,21 +128,25 @@ class RoleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
         width: double.infinity,
         padding: const EdgeInsets.all(20.0),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isSelected ? [Color(0xFF6A1B9A), Color(0xFFAB47BC)] : [Color(0xFF4A148C), Color(0xFF7B1FA2)],
+            colors: isSelected
+                ? [Color(0xFF3A7BD5), Color(0xFF00D2FF)] // Highlighted gradient
+                : [Color(0xFF6FB1FC), Color(0xFF0052D4)], // Default gradient
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(15.0),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10.0,
-              offset: Offset(0, 4),
+              color: isSelected ? Colors.blue.withOpacity(0.5) : Colors.black26,
+              blurRadius: 15.0,
+              offset: const Offset(0, 6),
             ),
           ],
         ),

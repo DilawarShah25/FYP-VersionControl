@@ -1,12 +1,9 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:convert';
-
-
 import '../../utils/circular_graph_painter.dart';
 
 class DetectionResultView extends StatefulWidget {
@@ -49,7 +46,7 @@ class _DetectionResultViewState extends State<DetectionResultView> {
     });
 
     try {
-      final url = Uri.parse('https://chigger-informed-mistakenly.ngrok-free.app/predict'); // Replace with Flask server URL
+      final url = Uri.parse('https://chigger-informed-mistakenly.ngrok-free.app/predict');
       final request = http.MultipartRequest('POST', url)
         ..files.add(await http.MultipartFile.fromPath('image', _image!.path));
 
@@ -150,9 +147,13 @@ class _DetectionResultViewState extends State<DetectionResultView> {
         width: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue[200]!, Colors.lightBlue[50]!],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF6FB1FC),
+              Color(0xFF4364F7),
+              Color(0xFF0052D4),
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
           boxShadow: [
             BoxShadow(
@@ -176,7 +177,7 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                   style: const TextStyle(
                     fontSize: 20.0,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -184,7 +185,12 @@ class _DetectionResultViewState extends State<DetectionResultView> {
             // Image, Processing Animation, or Results
             Expanded(
               child: _isProcessing
-                  ? const CircularProgressIndicator()
+                  ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 5,
+                ),
+              )
                   : (_predictedLabel != null && _confidence != null)
                   ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -203,6 +209,7 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -235,12 +242,12 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                 "No Image Selected",
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey,
+                  color: Colors.white,
                 ),
               ),
             ),
 
-            // Buttons
+            // Buttons with gradient style
             if (_image != null && _predictedLabel == null)
               Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -299,10 +306,8 @@ class _DetectionResultViewState extends State<DetectionResultView> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 5),
-        Text(text),
+        Text(text, style: const TextStyle(color: Colors.white)),
       ],
     );
   }
 }
-
-
