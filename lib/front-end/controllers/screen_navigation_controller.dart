@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../views/dashboard/other_dashboard/blog_view.dart';
+import '../views/dashboard/other_dashboard/blog/blog_view.dart';
 import '../views/dashboard/community_support_view/community_support_view.dart';
 import '../views/dashboard/other_dashboard/faq_view.dart';
 import '../views/dashboard/other_dashboard/profile_view.dart';
@@ -54,7 +54,7 @@ class _ScreensManagerState extends State<ScreensManager> {
       items: [
         PopupMenuItem(
           value: 'Set Up Notification',
-          child: _buildPopupMenuItem(Icons.notifications, 'Set Up Notification'),
+          child: _buildPopupMenuItem(Icons.notifications, 'Set Up\nNotification'),
         ),
         PopupMenuItem(
           value: 'BLOG',

@@ -141,7 +141,7 @@ class _SignUpViewState extends State<SignUpView> {
                       ),
                       SizedBox(height: 10),
                       Text(
-                        "Create a new account",
+                        "    Create a new account    ",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,

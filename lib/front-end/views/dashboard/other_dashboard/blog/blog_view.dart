@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../authentication/user_login_view.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'detail_screen.dart'; // Import the detail screen
+import 'blog_section.dart'; // Import the BlogSection widget
 
 class BlogView extends StatefulWidget {
   const BlogView({super.key});
@@ -12,23 +14,23 @@ class _BlogViewState extends State<BlogView> {
   final List<Map<String, String>> blogData = [
     {
       'title': 'Hair Loss Types',
-      'imagePath': 'lib/front-end/assets/images/hair_loss_types.png',
+      'imagePath': 'lib/front-end/assets/images/blog/hair_loss_types.png',
       'destination': 'DetailScreen1',
     },
     {
       'title': 'Revamp Your Hair Care Routine',
-      'imagePath': 'lib/front-end/assets/images/hair_loss_types.png',
+      'imagePath': 'lib/front-end/assets/images/blog/hair-care-routine-for-men.jpg',
       'destination': 'DetailScreen2',
     },
     {
-      'title': 'Effective Ways to Prevent Hair Loss',
-      'imagePath': 'lib/front-end/assets/images/hair_loss_types.png',
+      'title': 'Home Remedy To Stop Hair Fall In Men',
+      'imagePath': 'lib/front-end/assets/images/blog/home_remedy.png',
       'destination': 'DetailScreen3',
     },
     {
       'title': 'Healthy Scalp, Healthy Hair',
-      'imagePath': 'lib/front-end/assets/images/hair_loss_types.png',
-      'destination': 'DetailScreen5',
+      'imagePath': 'lib/front-end/assets/images/blog/healthy_scalp.jpg',
+      'destination': 'DetailScreen4',
     },
   ];
 
@@ -36,7 +38,7 @@ class _BlogViewState extends State<BlogView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70.0), // height of the AppBar
+        preferredSize: const Size.fromHeight(70.0),
         child: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -113,19 +115,16 @@ class _BlogViewState extends State<BlogView> {
                             title: blog['title']!,
                             imagePath: blog['imagePath']!,
                             onImageTap: () {
+                              String content = _getContentForBlog(blog['destination']!);
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
-                                    if (blog['destination'] == 'DetailScreen1') {
-                                      return const UserLoginView();
-                                    } else if (blog['destination'] == 'DetailScreen2') {
-                                      return const UserLoginView();
-                                    } else if (blog['destination'] == 'DetailScreen3') {
-                                      return const UserLoginView();
-                                    } else {
-                                      return const BlogView();
-                                    }
+                                    return DetailScreen(
+                                      title: blog['title']!,
+                                      imagePath: blog['imagePath']!,
+                                      content: content,
+                                    );
                                   },
                                 ),
                               );
@@ -142,63 +141,83 @@ class _BlogViewState extends State<BlogView> {
       ),
     );
   }
-}
 
-class BlogSection extends StatelessWidget {
-  final String title;
-  final String imagePath;
-  final VoidCallback onImageTap;
+  String _getContentForBlog(String destination) {
+    switch (destination) {
+      case 'DetailScreen1':
+        return '''
+## Hair Loss Types: Understanding Causes and Solutions
 
-  const BlogSection({
-    super.key,
-    required this.title,
-    required this.imagePath,
-    required this.onImageTap,
-  });
+Hair loss affects millions worldwide, impacting self-esteem and confidence. Identifying hair loss types and underlying causes enables effective treatment.
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onImageTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 20),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(imagePath),
-                  fit: BoxFit.cover,
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+### Types of Hair Loss
+
+- **Androgenetic Alopecia (Male/Female Pattern Baldness)**: Hormonal imbalance, genetics, and age-related.
+- **Alopecia Areata**: Autoimmune disease causing patchy hair loss.
+- **Telogen Effluvium**: Stress-induced excessive hair shedding.
+- **Traction Alopecia**: Hair loss due to tight hairstyles (braids, ponytails).
+- **Trichotillomania**: Psychological disorder involving compulsive hair pulling.
+- **Anagen Effluvium**: Chemotherapy-induced hair loss.
+- **Scarring Alopecia**: Permanent hair loss due to inflammation, injury, or infection.
+
+### Hormonal Hair Loss
+
+- **Male Hormonal Hair Loss**: Dihydrotestosterone (DHT) causes hair thinning.
+- **Female Hormonal Hair Loss**: Estrogen fluctuations, polycystic ovary syndrome (PCOS).
+- **Thyroid-Related Hair Loss**: Hypothyroidism or hyperthyroidism.
+
+### Other Causes
+
+- **Genetics**
+- **Stress**
+- **Nutritional Deficiencies (Iron, Vitamin D)**
+- **Hairstyling and Grooming**
+- **Infections (Fungal, Bacterial)**
+- **Autoimmune Disorders**
+- **Medications**
+
+### Symptoms 
+
+- Thinning or falling hair
+- Balding spots
+- Excessive shedding
+- Itchy scalp
+- Redness and inflammation
+
+### Treatment Options
+
+- **Medications**: Minoxidil, Finasteride
+- **Low-Level Laser Therapy (LLLT)**
+- **Platelet-Rich Plasma (PRP) Therapy**
+- **Hair Transplant**
+- **Dietary Changes**: Balanced nutrition
+- **Reducing Stress**: Yoga, meditation
+- **Consult Dermatologist**: Professional guidance
+
+### Prevention
+
+- Maintain a healthy diet
+- Reduce stress
+- Use gentle hair care products
+- Avoid excessive heat styling
+- Regular trims
+- Protect from sun damage
+- Monitor hormonal balance
+
+### Conclusion
+
+Hair loss affects individuals differently. Understanding types, causes, and solutions empowers effective management. Consult professionals for personalized advice.
+''';
+
+      case 'DetailScreen2':
+        return '''## Content for Revamp Your Hair Care Routine...''' ;
+
+      case 'DetailScreen3':
+        return '''## Content for Home Remedy To Stop Hair Fall In Men...''' ;
+
+      default:
+        return 'Content not available';
+    }
   }
 }
+

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:scalpsense/front-end/views/dashboard/community_support_view/community_support_view.dart';
 import 'dart:async';
 import '../authentication/user_login_view.dart'; // Import additional views
-import '../dashboard/other_dashboard/blog_view.dart';
-import '../dashboard/other_dashboard/user_manual_view.dart';
+import '../dashboard/other_dashboard/blog/blog_view.dart';
 import '../dashboard/other_dashboard/home_view.dart';
 class Carousel extends StatefulWidget {
   final List<String> images;
@@ -51,7 +51,7 @@ class _CarouselState extends State<Carousel> {
       case 0:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const UserManualView()),
+          MaterialPageRoute(builder: (context) => const BlogView()),
         );
         break;
       case 1:
@@ -63,7 +63,7 @@ class _CarouselState extends State<Carousel> {
       case 2:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const BlogView()),
+          MaterialPageRoute(builder: (context) => const CommunitySupportView()),
         );
         break;
       default:
