@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../authentication/user_login_view.dart'; // Import additional views
 import '../dashboard/community_support_view/community_support_view.dart';
 import '../dashboard/other_dashboard/blog/blog_view.dart';
 import '../dashboard/other_dashboard/home_view.dart';
+import '../dashboard/other_dashboard/nearby dermatologist/nearby_dermatologists_view.dart';
 class Carousel extends StatefulWidget {
   final List<String> images;
   const Carousel({
@@ -56,7 +56,7 @@ class _CarouselState extends State<Carousel> {
       case 1:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const UserLoginView()),
+          MaterialPageRoute(builder: (context) => const BlogView()),
         );
         break;
       case 2:
@@ -64,6 +64,13 @@ class _CarouselState extends State<Carousel> {
           context,
           MaterialPageRoute(builder: (context) => const CommunitySupportView()),
         );
+        break;
+      case 3:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NearbyDermatologistsView()),
+        );
+        break;
         break;
       default:
         Navigator.push(

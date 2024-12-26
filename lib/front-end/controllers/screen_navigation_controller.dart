@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../views/dashboard/other_dashboard/blog/blog_view.dart';
 import '../views/dashboard/community_support_view/community_support_view.dart';
-import '../views/dashboard/other_dashboard/faq_view.dart';
+import '../views/dashboard/other_dashboard/faq/faq_view.dart';
 import '../views/dashboard/other_dashboard/profile_view.dart';
 import '../views/dashboard/other_dashboard/home_view.dart';
 import 'role_controller.dart';

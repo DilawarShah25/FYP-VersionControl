@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart'; // Import the markdown package
+import 'package:flutter_markdown/flutter_markdown.dart';
 
+// DetailScreen to display content from the FAQ items
 class DetailScreen extends StatelessWidget {
   final String title;
-  final String imagePath;
   final String content;
 
   const DetailScreen({
     super.key,
     required this.title,
-    required this.imagePath,
     required this.content,
   });
 
@@ -30,7 +29,7 @@ class DetailScreen extends StatelessWidget {
           ),
         ),
         title: const Text(
-          'Blog',
+          'FAQ',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -39,7 +38,7 @@ class DetailScreen extends StatelessWidget {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white), // Change back button color to white
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -48,42 +47,22 @@ class DetailScreen extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.only(top: 5.0), // Remove padding between appbar and content
+            padding: const EdgeInsets.only(top: 0.0),
             child: Container(
-              width: double.infinity, // Ensure full width
+              width: double.infinity,
               decoration: const BoxDecoration(
-                color: Colors.white, // Set background color to white
+                color: Colors.white,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title with a larger size and bold style
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0), // Ensure left and right padding
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24, // Larger title size
-                      ),
-                    ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.0),
                   ),
-                  const SizedBox(height: 5.0), // Space between title and image
-                  // Image below the title
-                  Center(
-                    child: SizedBox(
-                      // width: double.infinity,
-                      width: 330,
-                      child: Image.asset(
-                        imagePath,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20), // Space between image and content
+                  const SizedBox(height: 10),
                   // Markdown formatted content
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0), // Add padding to content
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: MarkdownBody(
                       data: content,
                       styleSheet: MarkdownStyleSheet(
@@ -111,6 +90,8 @@ class DetailScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Ensure scrolling works smoothly
+                  const SizedBox(height: 120), // Add space at the bottom
                 ],
               ),
             ),

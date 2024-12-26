@@ -133,7 +133,7 @@ class _ProfileViewState extends State<ProfileView> {
                 padding: EdgeInsets.only(right: 50.0, top: 12.0),
                 child: Center(
                   child: Text(
-                    'Edit Profile',
+                    'Profile',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,

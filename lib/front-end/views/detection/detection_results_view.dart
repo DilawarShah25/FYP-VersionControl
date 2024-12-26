@@ -4,7 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:convert';
+
 import '../../utils/circular_graph_painter.dart';
+// import 'upload_history.dart'; // Import the second file
 
 class DetectionResultView extends StatefulWidget {
   final String title;
@@ -23,6 +25,9 @@ class _DetectionResultViewState extends State<DetectionResultView> {
   bool _isProcessing = false;
   String? _predictedLabel;
   double? _confidence;
+  int totalUploads = 0;
+  int withoutProblems = 0;
+  int diagnosedProblems = 0;
 
   Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
@@ -60,6 +65,14 @@ class _DetectionResultViewState extends State<DetectionResultView> {
         setState(() {
           _predictedLabel = responseData['predicted_label'];
           _confidence = responseData['confidence'];
+
+          // Update totals based on predicted label
+          totalUploads++;
+          if (_predictedLabel == 'normal') {
+            withoutProblems++;
+          } else {
+            diagnosedProblems++;
+          }
         });
       } else {
         setState(() {
@@ -187,73 +200,73 @@ class _DetectionResultViewState extends State<DetectionResultView> {
             Expanded(
               child: _isProcessing
                   ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 5,
-                      ),
-                    )
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.yellowAccent),
+                  strokeWidth: 5,
+                ),
+              )
                   : (_predictedLabel != null && _confidence != null)
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: LayoutBuilder(
-                                builder: (context, constraints) {
-                                  double size = min(constraints.maxWidth,
-                                          constraints.maxHeight) *
-                                      0.7;
-                                  return CustomPaint(
-                                    size: Size(size, size),
-                                    painter: CircularGraphPainter(
-                                        confidence: _confidence!),
-                                    child: Center(
-                                      child: Text(
-                                        _predictedLabel!,
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
+                  ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        double size = min(constraints.maxWidth,
+                            constraints.maxHeight) *
+                            0.7;
+                        return CustomPaint(
+                          size: Size(size, size),
+                          painter: CircularGraphPainter(
+                              confidence: _confidence!),
+                          child: Center(
+                            child: Text(
+                              _predictedLabel!,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 20),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _buildLegendDot(Colors.greenAccent,
-                                    'Confidence: ${(_confidence! * 100).toStringAsFixed(2)}%'),
-                                const SizedBox(width: 20),
-                                _buildLegendDot(Colors.red,
-                                    'Remaining: ${(100 - _confidence! * 100).toStringAsFixed(2)}%'),
-                              ],
-                            ),
-                          ],
-                        )
-                      : _image != null
-                          ? Image.file(
-                              _image!,
-                              height: 200,
-                              width: 200,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Text("Error loading image");
-                              },
-                            )
-                          : const Align(
-                              alignment: Alignment.center,
-                              child: Text(
-                                "No Image Selected",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendDot(Colors.greenAccent,
+                          'Confidence: ${(_confidence! * 100).toStringAsFixed(2)}%'),
+                      const SizedBox(width: 20),
+                      _buildLegendDot(Colors.red,
+                          'Remaining: ${(100 - _confidence! * 100).toStringAsFixed(2)}%'),
+                    ],
+                  ),
+                ],
+              )
+                  : _image != null
+                  ? Image.file(
+                _image!,
+                height: 200,
+                width: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Text("Error loading image");
+                },
+              )
+                  : const Align(
+                alignment: Alignment.center,
+                child: Text(
+                  "No Image Selected",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
 
             // Buttons with gradient style
@@ -264,7 +277,6 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                         vertical: 15.0, horizontal: 95.0),
-                    // backgroundColor: Colors.blue,
                     backgroundColor: Colors.greenAccent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -287,7 +299,6 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                       vertical: 15.0, horizontal: 70.0),
-                  // backgroundColor: Colors.grey[800],
                   backgroundColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),

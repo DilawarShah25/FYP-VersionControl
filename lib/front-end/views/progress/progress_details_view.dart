@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../dashboard/other_dashboard/faq/detail_screen.dart'; // Import the DetailScreen class
 
 class PerformanceDetailsView extends StatelessWidget {
   const PerformanceDetailsView({super.key});
@@ -23,7 +24,7 @@ class PerformanceDetailsView extends StatelessWidget {
         children: [
           // Header Section
           Container(
-            height: 100,
+            height: 80,
             decoration: BoxDecoration(
               color: Colors.blue,
               borderRadius: BorderRadius.circular(20),
@@ -69,7 +70,30 @@ class PerformanceDetailsView extends StatelessWidget {
           Center(
             child: ElevatedButton(
               onPressed: () {
-                // Implement your "Read More" functionality here
+                // Implement your "Read More" functionality here to navigate to DetailScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return const DetailScreen(
+                        title: 'Early Detection of Hair Fall',
+                        content: '''
+# Early Detection of Hair Fall
+
+Early detection of hair fall is crucial for effective treatment. Scalp Sense offers an innovative solution that helps you identify the first signs of hair loss, enabling you to take action before the situation worsens.
+
+## How It Helps:
+- **Scalp Analysis**: The app detects signs of thinning and other early indicators of hair loss.
+- **Personalized Treatment Plans**: Based on your condition, Scalp Sense provides early interventions to prevent further damage.
+- **Proactive Care**: Catching hair fall early means you can start treatments sooner, reducing the impact.
+
+## Conclusion
+With Scalp Sense, early detection of hair fall is within your reach. By addressing hair loss early, you can ensure healthier hair in the long run.
+''',
+                      );
+                    },
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,

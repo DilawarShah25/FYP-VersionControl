@@ -88,7 +88,7 @@ class _BlogViewState extends State<BlogView> {
             children: [
               Expanded(
                 child: Container(
-                  width: double.infinity,
+                  width: double.infinity, // Ensure full width
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: const BorderRadius.only(
@@ -210,10 +210,129 @@ Hair loss affects individuals differently. Understanding types, causes, and solu
 ''';
 
       case 'DetailScreen2':
-        return '''## Content for Revamp Your Hair Care Routine...''' ;
+        return '''
+# Revamp Your Hair Care Routine: Steps to Healthier Hair
+
+Having a solid hair care routine is essential to maintaining healthy, thick, and shiny hair. Whether you're dealing with hair loss, dryness, or frizz, a structured routine tailored to your hair type can make all the difference.
+
+## Step 1: Choose the Right Shampoo and Conditioner
+
+Pick a shampoo and conditioner that suits your hair type. Look for formulas that address your specific concerns, such as dryness, damage, or volume. 
+
+- **Dry Hair**: Opt for moisturizing and hydrating products.
+- **Oily Hair**: Choose a clarifying shampoo that helps control excess oil.
+- **Curly Hair**: Go for sulfate-free shampoos to prevent frizz and keep curls defined.
+
+## Step 2: Regular Scalp Care
+
+Scalp health is essential for healthy hair growth. Use a gentle scrub or scalp massager to remove dead skin and product buildup. Regularly massaging your scalp for a few minutes helps stimulate blood flow and promotes healthy hair growth.
+
+## Step 3: Deep Conditioning Treatments
+
+Once a week, treat your hair to a deep conditioning mask or oil treatment. Deep conditioning helps restore moisture, strengthen hair, and reduce split ends.
+
+- **Oily Scalp**: Use lightweight oils like argan oil.
+- **Dry Scalp**: Try heavier oils like coconut oil or jojoba oil.
+
+## Step 4: Minimize Heat Styling
+
+Excessive heat styling can cause severe damage to your hair. Try to limit the use of straighteners, curling irons, and blow dryers. When you must use heat, always apply a heat protectant spray.
+
+## Step 5: Haircuts and Trims
+
+Regular trims are vital to keeping your hair looking healthy. Cutting off damaged ends prevents split ends and encourages healthy hair growth.
+
+## Step 6: Maintain a Balanced Diet
+
+Your hair is a reflection of your health. Ensure you're getting a balanced diet rich in vitamins and minerals such as biotin, vitamin E, iron, and omega-3 fatty acids. Consider adding hair supplements if necessary.
+
+## Conclusion
+
+Revamping your hair care routine can significantly improve the condition and appearance of your hair. Take time to invest in your hair's health by following these simple steps for healthier, stronger, and shinier hair.
+''';
 
       case 'DetailScreen3':
-        return '''## Content for Home Remedy To Stop Hair Fall In Men...''' ;
+        return '''
+# Home Remedy To Stop Hair Fall In Men: Natural Solutions for Thicker Hair
+
+Hair fall can be distressing, especially for men. While medical treatments are available, there are several natural remedies you can try at home to stop hair fall and promote healthier, thicker hair.
+
+## Remedy 1: Aloe Vera for Scalp Health
+
+Aloe vera is well known for its soothing and moisturizing properties. It can help reduce inflammation on the scalp, promote hair growth, and prevent dandruff.
+
+- Apply fresh aloe vera gel directly to your scalp.
+- Leave it on for 30 minutes before rinsing with lukewarm water.
+
+## Remedy 2: Onion Juice for Hair Regrowth
+
+Onion juice is rich in sulfur, which helps in collagen production and promotes hair growth. The high sulfur content improves blood circulation in the scalp, allowing hair follicles to receive better nutrients.
+
+- Grate an onion and extract its juice.
+- Apply the juice to your scalp and leave it on for 15-30 minutes before washing off.
+
+## Remedy 3: Coconut Oil for Hair Strength
+
+Coconut oil has antifungal and antibacterial properties that help reduce dandruff and protect your hair from further damage. It’s also known for deeply moisturizing and nourishing the scalp.
+
+- Massage warm coconut oil into your scalp.
+- Leave it overnight and wash your hair the next morning.
+
+## Remedy 4: Green Tea for DHT Reduction
+
+Green tea contains antioxidants and compounds that can block Dihydrotestosterone (DHT), a hormone linked to hair loss. Regular use of green tea on the scalp can help slow down hair thinning.
+
+- Steep green tea in hot water, let it cool, and apply it to your scalp.
+- Leave it on for 30-45 minutes before rinsing off.
+
+## Remedy 5: Diet Rich in Nutrients
+
+Eating a diet rich in vitamins, minerals, and protein is crucial for hair growth. Focus on foods such as eggs, spinach, nuts, and fish to provide your hair with the nutrients it needs.
+
+- Include biotin, zinc, and iron-rich foods to reduce hair fall.
+
+## Conclusion
+
+While these natural remedies may help with hair loss prevention, consistency is key. Results might take time, so it’s important to follow these remedies regularly. Consult a healthcare professional for persistent or severe hair loss issues.
+''';
+
+      case 'DetailScreen4':
+        return '''
+# Healthy Scalp, Healthy Hair: Tips for Scalp Care
+
+A healthy scalp is the foundation for healthy hair. If your scalp is not properly cared for, your hair can become dry, brittle, or prone to hair loss. Below are essential tips for maintaining a healthy scalp.
+
+## Tip 1: Cleanse Regularly
+
+Regular washing is essential for removing buildup of dirt, oil, and styling products from your scalp. Choose a mild, sulfate-free shampoo that matches your hair type.
+
+- Wash your hair 2-3 times per week to prevent over-drying or excessive oil buildup.
+- Use lukewarm water instead of hot water to avoid stripping natural oils.
+
+## Tip 2: Exfoliate Your Scalp
+
+Exfoliating your scalp helps remove dead skin cells and prevent clogged follicles, which can lead to hair thinning. Use a scalp scrub or a gentle exfoliating shampoo once a week.
+
+## Tip 3: Moisturize Your Scalp
+
+Just like your skin, your scalp requires hydration. Apply a light, non-greasy moisturizer to your scalp if it feels dry. You can also try oil treatments like jojoba or argan oil for deep hydration.
+
+## Tip 4: Avoid Tight Hairstyles
+
+Tight hairstyles, such as braids, ponytails, and buns, can cause tension on the scalp and lead to traction alopecia, a form of hair loss. Opt for looser styles and avoid pulling hair too tightly.
+
+## Tip 5: Massage Your Scalp
+
+Scalp massage improves circulation, which helps nourish hair follicles and promotes hair growth. Use your fingertips to gently massage your scalp for a few minutes each day.
+
+## Tip 6: Protect Your Scalp From the Sun
+
+Excessive sun exposure can damage your scalp and lead to hair thinning. If you're outdoors for long periods, wear a hat or use a scalp sunscreen.
+
+## Conclusion
+
+Taking care of your scalp is just as important as caring for your hair. By following these simple tips, you can promote healthy hair growth and keep your scalp in top condition. Healthy hair starts with a healthy scalp.
+''';
 
       default:
         return 'Content not available';
