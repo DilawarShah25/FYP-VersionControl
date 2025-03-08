@@ -11,9 +11,10 @@ class NearbyDermatologistsView extends StatefulWidget {
 }
 
 class _NearbyDermatologistsViewState extends State<NearbyDermatologistsView> {
-  static const String apiKey = "AIzaSyAOVYRIgupAurZup5y1PRh8Ismb1A3lLao";
+  static const String apiKey = "AlzaSydlT3PcvzpVjh2G3km77z4aZcLMR_TBqRB";
   final List<Map<String, dynamic>> _dermatologists = [];
   LatLng? currentPosition;
+  String searchTerm = ""; // Add a variable to store the search term
 
   @override
   void initState() {
@@ -59,12 +60,77 @@ class _NearbyDermatologistsViewState extends State<NearbyDermatologistsView> {
     }
   }
 
+  void _onSearch(String value) {
+    setState(() {
+      searchTerm = value;
+    });
+    // Implement search logic here based on searchTerm
+    // You can filter the _dermatologists list based on the search term
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nearby Dermatologists'),
-        backgroundColor: Colors.blue,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(115.0), // Height of the AppBar
+        child: AppBar(
+          // backgroundColor: Colors.transparent,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF004e92),
+                  Color(0xFF000428),
+                ],
+              ),
+            ),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+          title: const Padding(
+            padding: EdgeInsets.only(right: 50.0, top: 15.0),
+            child: Center(
+              child: Text(
+                'Nearby Dermatologists',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 22,
+                ),
+              ),
+            ),
+          ),
+          centerTitle: true,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(100.0), // Increased height for search bar
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              height: 50.0,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                child: TextField(
+                  onChanged: _onSearch,
+                  decoration: InputDecoration(
+                    hintText: 'Search for dermatologists',
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
       body: currentPosition == null
           ? const Center(
@@ -95,4 +161,3 @@ class _NearbyDermatologistsViewState extends State<NearbyDermatologistsView> {
     );
   }
 }
-

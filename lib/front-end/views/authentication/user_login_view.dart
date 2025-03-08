@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'sign_up.dart'; // Import the Signup Screen
-import '../dashboard/other_dashboard/home_view.dart'; // Import the Home Screen (Assuming it's your home screen)
+import 'package:scalpsense/front-end/views/authentication/sign_up.dart';
 import '../../controllers/screen_navigation_controller.dart';
 
 class UserLoginView extends StatefulWidget {
@@ -11,33 +10,25 @@ class UserLoginView extends StatefulWidget {
 }
 
 class _UserLoginViewState extends State<UserLoginView> {
-  // Controllers to hold the email and password
-  TextEditingController emailController = TextEditingController(text: 'csdilawar@gmail.com');
-  TextEditingController passwordController = TextEditingController(text: '1234');
+  final TextEditingController emailController = TextEditingController(text: 'csdilawar@gmail.com');
+  final TextEditingController passwordController = TextEditingController(text: '1234');
 
-  // Error message state
   String? errorMessage;
-
-  // Dummy credentials for validation
-  String dummyEmail = 'csdilawar@gmail.com';
-  String dummyPassword = '1234';
-
-  // Password visibility toggle
   bool _showPassword = false;
 
-  // Function to validate login credentials
-  void _validateLogin() {
-    if (emailController.text == dummyEmail && passwordController.text == dummyPassword) {
-      // If credentials are correct, navigate to Home Screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ScreensManager()),
-      );
-    } else {
-      setState(() {
-        errorMessage = 'Incorrect email or password.';
-      });
-    }
+  Future<void> _validateLogin() async {
+    // Implement your login logic here
+    // If login is successful:
+    // Navigate to the home screen
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ScreensManager()),
+    );
+    // If there's an error, set the errorMessage to show it in the UI
+    // Example:
+    // setState(() {
+    //   errorMessage = 'Login failed, please try again.';
+    // });
   }
 
   @override
@@ -47,7 +38,7 @@ class _UserLoginViewState extends State<UserLoginView> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)], // Matching gradient
+            colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

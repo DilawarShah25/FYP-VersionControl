@@ -4,9 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:convert';
-
 import '../../utils/circular_graph_painter.dart';
-// import 'upload_history.dart'; // Import the second file
 
 class DetectionResultView extends StatefulWidget {
   final String title;

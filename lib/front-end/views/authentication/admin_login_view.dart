@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'sign_up.dart'; // Import the Signup Screen
-import '../dashboard/other_dashboard/home_view.dart'; // Import the Home Screen (Assuming it's your home screen)
 import '../../controllers/screen_navigation_controller.dart';
 
 class AdminLoginView extends StatefulWidget {

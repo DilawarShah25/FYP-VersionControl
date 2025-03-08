@@ -185,44 +185,6 @@ class _HomeViewState extends State<HomeView> {
                               ),
                             ),
                             const SizedBox(height: 20),
-
-                            // Third Container
-                            Container(
-                              height: 190.0,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.orange[200]!,
-                                    Colors.orange[100]!
-                                  ],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                    color: Colors.deepOrangeAccent, width: 1.5),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'Add your content here',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.deepOrange[900],
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),

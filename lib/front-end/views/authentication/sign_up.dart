@@ -18,6 +18,7 @@ class _SignUpViewState extends State<SignUpView> {
   bool _showPassword = false;
   bool _showConfirmPassword = false;
 
+
   bool _isValidEmail(String email) {
     return email.contains('@') && email.contains('.');
   }
@@ -60,33 +61,16 @@ class _SignUpViewState extends State<SignUpView> {
       return;
     }
 
-    // Save user data
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('username', name);
-    await prefs.setString('email', email);
-    await prefs.setString('role', _selectedRole);
+    try {
+      // Register user with Firebase
 
-    setState(() {
-      errorMessage = null;
-    });
 
-    // Show success dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Success'),
-        content: Text('Registered successfully as $_selectedRole.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context); // Go back to the previous screen
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+      });
+    }
   }
 
   @override
