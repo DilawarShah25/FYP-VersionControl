@@ -1,12 +1,9 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:convert';
-
-
 import '../../utils/circular_graph_painter.dart';
 
 class DetectionResultView extends StatefulWidget {
@@ -26,6 +23,9 @@ class _DetectionResultViewState extends State<DetectionResultView> {
   bool _isProcessing = false;
   String? _predictedLabel;
   double? _confidence;
+  int totalUploads = 0;
+  int withoutProblems = 0;
+  int diagnosedProblems = 0;
 
   Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
@@ -49,7 +49,8 @@ class _DetectionResultViewState extends State<DetectionResultView> {
     });
 
     try {
-      final url = Uri.parse('https://chigger-informed-mistakenly.ngrok-free.app/predict'); // Replace with Flask server URL
+      final url = Uri.parse(
+          'https://chigger-informed-mistakenly.ngrok-free.app/predict');
       final request = http.MultipartRequest('POST', url)
         ..files.add(await http.MultipartFile.fromPath('image', _image!.path));
 
@@ -62,6 +63,14 @@ class _DetectionResultViewState extends State<DetectionResultView> {
         setState(() {
           _predictedLabel = responseData['predicted_label'];
           _confidence = responseData['confidence'];
+
+          // Update totals based on predicted label
+          totalUploads++;
+          if (_predictedLabel == 'normal') {
+            withoutProblems++;
+          } else {
+            diagnosedProblems++;
+          }
         });
       } else {
         setState(() {
@@ -149,10 +158,14 @@ class _DetectionResultViewState extends State<DetectionResultView> {
         height: 400.0,
         width: double.infinity,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue[200]!, Colors.lightBlue[50]!],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF6FB1FC),
+              Color(0xFF4364F7),
+              Color(0xFF0052D4),
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
           boxShadow: [
             BoxShadow(
@@ -170,13 +183,13 @@ class _DetectionResultViewState extends State<DetectionResultView> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Align(
-                alignment: Alignment.topLeft,
+                alignment: Alignment.center,
                 child: Text(
                   widget.title,
                   style: const TextStyle(
-                    fontSize: 20.0,
+                    color: Colors.white,
+                    fontSize: 30,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
                   ),
                 ),
               ),
@@ -184,7 +197,12 @@ class _DetectionResultViewState extends State<DetectionResultView> {
             // Image, Processing Animation, or Results
             Expanded(
               child: _isProcessing
-                  ? const CircularProgressIndicator()
+                  ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.yellowAccent),
+                  strokeWidth: 5,
+                ),
+              )
                   : (_predictedLabel != null && _confidence != null)
                   ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -193,16 +211,20 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        double size = min(constraints.maxWidth, constraints.maxHeight) * 0.7;
+                        double size = min(constraints.maxWidth,
+                            constraints.maxHeight) *
+                            0.7;
                         return CustomPaint(
                           size: Size(size, size),
-                          painter: CircularGraphPainter(confidence: _confidence!),
+                          painter: CircularGraphPainter(
+                              confidence: _confidence!),
                           child: Center(
                             child: Text(
                               _predictedLabel!,
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -214,9 +236,11 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendDot(Colors.green, 'Confidence: ${(_confidence! * 100).toStringAsFixed(2)}%'),
+                      _buildLegendDot(Colors.greenAccent,
+                          'Confidence: ${(_confidence! * 100).toStringAsFixed(2)}%'),
                       const SizedBox(width: 20),
-                      _buildLegendDot(Colors.red, 'Remaining: ${(100 - _confidence! * 100).toStringAsFixed(2)}%'),
+                      _buildLegendDot(Colors.red,
+                          'Remaining: ${(100 - _confidence! * 100).toStringAsFixed(2)}%'),
                     ],
                   ),
                 ],
@@ -231,30 +255,34 @@ class _DetectionResultViewState extends State<DetectionResultView> {
                   return const Text("Error loading image");
                 },
               )
-                  : const Text(
-                "No Image Selected",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
+                  : const Align(
+                alignment: Alignment.center,
+                child: Text(
+                  "No Image Selected",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
 
-            // Buttons
+            // Buttons with gradient style
             if (_image != null && _predictedLabel == null)
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 30.0),
-                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15.0, horizontal: 95.0),
+                    backgroundColor: Colors.greenAccent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   onPressed: _sendImageForPrediction,
                   child: const Text(
-                    'Show Detected Results',
+                    'Show Results',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -267,8 +295,9 @@ class _DetectionResultViewState extends State<DetectionResultView> {
               padding: const EdgeInsets.all(8.0),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 30.0),
-                  backgroundColor: Colors.grey[800],
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 15.0, horizontal: 70.0),
+                  backgroundColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -299,10 +328,8 @@ class _DetectionResultViewState extends State<DetectionResultView> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 5),
-        Text(text),
+        Text(text, style: const TextStyle(color: Colors.white)),
       ],
     );
   }
 }
-
-

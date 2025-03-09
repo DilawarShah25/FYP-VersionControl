@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "877274148035",
-    "project_id": "hairfall-f179d",
-    "storage_bucket": "hairfall-f179d.firebasestorage.app"
+    "project_number": "755552223306",
+    "project_id": "flutter-hairloss-app",
+    "storage_bucket": "flutter-hairloss-app.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:877274148035:android:627bae62a56ab549fe4676",
+        "mobilesdk_app_id": "1:755552223306:android:6f5e93957cdd4fa2cfa6b3",
         "android_client_info": {
           "package_name": "com.example.scalp_sense"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCtW_6mnA_gTKYMljWaB0w3x4VjncXqdM8"
+          "current_key": "AIzaSyDh0FXta8GnfrQY3HP5nRjDL4K_PZgRCTY"
         }
       ],
       "services": {
