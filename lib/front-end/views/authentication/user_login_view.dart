@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:scalpsense/front-end/views/authentication/sign_up.dart';
 import '../../controllers/screen_navigation_controller.dart';
 
@@ -10,25 +11,50 @@ class UserLoginView extends StatefulWidget {
 }
 
 class _UserLoginViewState extends State<UserLoginView> {
-  final TextEditingController emailController = TextEditingController(text: 'csdilawar@gmail.com');
-  final TextEditingController passwordController = TextEditingController(text: '1234');
-
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   String? errorMessage;
   bool _showPassword = false;
 
+  // Function to validate login credentials
   Future<void> _validateLogin() async {
-    // Implement your login logic here
-    // If login is successful:
-    // Navigate to the home screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const ScreensManager()),
-    );
-    // If there's an error, set the errorMessage to show it in the UI
-    // Example:
-    // setState(() {
-    //   errorMessage = 'Login failed, please try again.';
-    // });
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      // Navigate to the home screen upon successful login
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ScreensManager()),
+      );
+    } catch (e) {
+      setState(() {
+        errorMessage = "Login failed: ${e.toString()}";
+      });
+    }
+  }
+
+  // Function to reset password
+  Future<void> _resetPassword() async {
+    if (emailController.text.isEmpty) {
+      setState(() {
+        errorMessage = "Please enter your email first.";
+      });
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text.trim());
+      setState(() {
+        errorMessage = "Password reset link sent! Check your email.";
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = "Error: ${e.toString()}";
+      });
+    }
   }
 
   @override
@@ -51,7 +77,7 @@ class _UserLoginViewState extends State<UserLoginView> {
                   height: 300,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)], // Matching gradient
+                      colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -168,20 +194,18 @@ class _UserLoginViewState extends State<UserLoginView> {
                           'Login',
                           style: TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.bold, // Bolded text
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                       const SizedBox(height: 10),
                       TextButton(
-                        onPressed: () {
-                          // Handle forgot password logic here
-                        },
+                        onPressed: _resetPassword,
                         child: const Text(
                           'Forgot Password?',
                           style: TextStyle(
                             color: Colors.white,
-                            fontWeight: FontWeight.bold, // Bolded text
+                            fontWeight: FontWeight.bold,
                             decoration: TextDecoration.none,
                           ),
                         ),
@@ -205,7 +229,7 @@ class _UserLoginViewState extends State<UserLoginView> {
                               "Sign Up",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontWeight: FontWeight.bold, // Bolded text
+                                fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.none,
                               ),
                             ),

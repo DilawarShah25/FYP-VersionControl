@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.baseflow.example</string>
+	<string>com.scalpsense.example</string>
 	<key>PROJECT_ID</key>
 	<string>hair-loss-app</string>
 	<key>STORAGE_BUCKET</key>
