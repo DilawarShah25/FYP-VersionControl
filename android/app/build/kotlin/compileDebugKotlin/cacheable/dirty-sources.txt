@@ -1,0 +1,1 @@
+D:\fyp development work\Project work\Scalp Sense\android\app\src\main\kotlin\com\example\camera_gallery\MainActivity.kt

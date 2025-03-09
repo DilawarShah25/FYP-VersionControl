@@ -1,0 +1,61 @@
+com.example.scalp_sense.app-jetified-play-services-base-18.3.0-0 C:\Users\Dell\.gradle\caches\transforms-3\0aca70453c947477d5e6328b9790a041\transformed\jetified-play-services-base-18.3.0\res
+com.example.scalp_sense.app-jetified-core-ktx-1.13.1-1 C:\Users\Dell\.gradle\caches\transforms-3\19883c42fbfa834786003bdfcc123f46\transformed\jetified-core-ktx-1.13.1\res
+com.example.scalp_sense.app-jetified-lifecycle-viewmodel-savedstate-2.7.0-2 C:\Users\Dell\.gradle\caches\transforms-3\1c6cf095b17b149460d9d50b0294f555\transformed\jetified-lifecycle-viewmodel-savedstate-2.7.0\res
+com.example.scalp_sense.app-fragment-1.7.1-3 C:\Users\Dell\.gradle\caches\transforms-3\1d1cda11b86692d07297ae42d5a97327\transformed\fragment-1.7.1\res
+com.example.scalp_sense.app-appcompat-1.1.0-4 C:\Users\Dell\.gradle\caches\transforms-3\1e13ac34fd0bcf409606bda353142cc4\transformed\appcompat-1.1.0\res
+com.example.scalp_sense.app-jetified-activity-ktx-1.9.2-5 C:\Users\Dell\.gradle\caches\transforms-3\20833a4b62cd3b279cf029f08496983a\transformed\jetified-activity-ktx-1.9.2\res
+com.example.scalp_sense.app-recyclerview-1.0.0-6 C:\Users\Dell\.gradle\caches\transforms-3\238916701d71a2e41a50bd71e4953498\transformed\recyclerview-1.0.0\res
+com.example.scalp_sense.app-lifecycle-livedata-core-2.7.0-7 C:\Users\Dell\.gradle\caches\transforms-3\2aee5e887ce518798987cc772da591e5\transformed\lifecycle-livedata-core-2.7.0\res
+com.example.scalp_sense.app-jetified-window-1.2.0-8 C:\Users\Dell\.gradle\caches\transforms-3\32e05b2f2f5bc4b18c72b8f35e0189d5\transformed\jetified-window-1.2.0\res
+com.example.scalp_sense.app-preference-1.2.1-9 C:\Users\Dell\.gradle\caches\transforms-3\38d19577a48a48adb19dd0bf16a8aa7f\transformed\preference-1.2.1\res
+com.example.scalp_sense.app-jetified-window-java-1.2.0-10 C:\Users\Dell\.gradle\caches\transforms-3\41227eebab6d1759258aa7ed3dd20f52\transformed\jetified-window-java-1.2.0\res
+com.example.scalp_sense.app-jetified-lifecycle-viewmodel-ktx-2.7.0-11 C:\Users\Dell\.gradle\caches\transforms-3\4c49c5630ca5c2174bdcc51691a2e354\transformed\jetified-lifecycle-viewmodel-ktx-2.7.0\res
+com.example.scalp_sense.app-jetified-datastore-preferences-1.0.0-12 C:\Users\Dell\.gradle\caches\transforms-3\4eb917e76d536d4335b9e583b4418e85\transformed\jetified-datastore-preferences-1.0.0\res
+com.example.scalp_sense.app-jetified-android-maps-utils-3.6.0-13 C:\Users\Dell\.gradle\caches\transforms-3\4f0284575ab8c71e9bd4c6b9f4d7728f\transformed\jetified-android-maps-utils-3.6.0\res
+com.example.scalp_sense.app-core-1.13.1-14 C:\Users\Dell\.gradle\caches\transforms-3\52e18c112b3c464ebfad2622182d3ae8\transformed\core-1.13.1\res
+com.example.scalp_sense.app-jetified-play-services-auth-20.7.0-15 C:\Users\Dell\.gradle\caches\transforms-3\54c62134bf0c5535d5e977257d850aca\transformed\jetified-play-services-auth-20.7.0\res
+com.example.scalp_sense.app-jetified-core-common-2.0.3-16 C:\Users\Dell\.gradle\caches\transforms-3\579b8c80396a94a35a3458dc26ca1daa\transformed\jetified-core-common-2.0.3\res
+com.example.scalp_sense.app-coordinatorlayout-1.0.0-17 C:\Users\Dell\.gradle\caches\transforms-3\6c7be0bf430b5174a4cc04b2819715db\transformed\coordinatorlayout-1.0.0\res
+com.example.scalp_sense.app-jetified-activity-1.9.2-18 C:\Users\Dell\.gradle\caches\transforms-3\8153becf25803ea4cab1630fcc911c51\transformed\jetified-activity-1.9.2\res
+com.example.scalp_sense.app-jetified-credentials-1.2.0-rc01-19 C:\Users\Dell\.gradle\caches\transforms-3\87fbdb4f31bc237f7a161977cd82d211\transformed\jetified-credentials-1.2.0-rc01\res
+com.example.scalp_sense.app-jetified-firebase-common-21.0.0-20 C:\Users\Dell\.gradle\caches\transforms-3\8b679bbec0be29e5184eaa84e5817057\transformed\jetified-firebase-common-21.0.0\res
+com.example.scalp_sense.app-jetified-appcompat-resources-1.1.0-21 C:\Users\Dell\.gradle\caches\transforms-3\a66cc9baa39129973cc5635aff575f8f\transformed\jetified-appcompat-resources-1.1.0\res
+com.example.scalp_sense.app-jetified-annotation-experimental-1.4.0-22 C:\Users\Dell\.gradle\caches\transforms-3\a7ab7aa2a4f4bda59a81869a0b7c32e2\transformed\jetified-annotation-experimental-1.4.0\res
+com.example.scalp_sense.app-transition-1.4.1-23 C:\Users\Dell\.gradle\caches\transforms-3\adb62d1c89ec1480df903cac6f136596\transformed\transition-1.4.1\res
+com.example.scalp_sense.app-lifecycle-viewmodel-2.7.0-24 C:\Users\Dell\.gradle\caches\transforms-3\ae193ecf306e3e5f3f2e92c4c907086c\transformed\lifecycle-viewmodel-2.7.0\res
+com.example.scalp_sense.app-jetified-credentials-play-services-auth-1.2.0-rc01-25 C:\Users\Dell\.gradle\caches\transforms-3\ae55e443e748ee18123fc763bf7436d1\transformed\jetified-credentials-play-services-auth-1.2.0-rc01\res
+com.example.scalp_sense.app-jetified-savedstate-ktx-1.2.1-26 C:\Users\Dell\.gradle\caches\transforms-3\ae5e5e6521e7c26cb8f63d65df62ad08\transformed\jetified-savedstate-ktx-1.2.1\res
+com.example.scalp_sense.app-jetified-play-services-basement-18.4.0-27 C:\Users\Dell\.gradle\caches\transforms-3\b0151d41c29b825112b430fc64584a39\transformed\jetified-play-services-basement-18.4.0\res
+com.example.scalp_sense.app-jetified-tracing-1.2.0-28 C:\Users\Dell\.gradle\caches\transforms-3\b33e37e1dc96745bc3f95c945b60f544\transformed\jetified-tracing-1.2.0\res
+com.example.scalp_sense.app-slidingpanelayout-1.2.0-29 C:\Users\Dell\.gradle\caches\transforms-3\ba5aa1b0e4976bbeb1b6b47564a51f7f\transformed\slidingpanelayout-1.2.0\res
+com.example.scalp_sense.app-jetified-core-1.0.0-30 C:\Users\Dell\.gradle\caches\transforms-3\c04664ca7cedddc926a4308a819b96dd\transformed\jetified-core-1.0.0\res
+com.example.scalp_sense.app-jetified-lifecycle-livedata-core-ktx-2.7.0-31 C:\Users\Dell\.gradle\caches\transforms-3\c1382e0a8deba95b543c09e639625438\transformed\jetified-lifecycle-livedata-core-ktx-2.7.0\res
+com.example.scalp_sense.app-jetified-startup-runtime-1.1.1-32 C:\Users\Dell\.gradle\caches\transforms-3\c8a0e04da3700c281c0b4b8acc098d89\transformed\jetified-startup-runtime-1.1.1\res
+com.example.scalp_sense.app-jetified-datastore-1.0.0-33 C:\Users\Dell\.gradle\caches\transforms-3\ca164c64c92521e8c72c0fa2589c48e0\transformed\jetified-datastore-1.0.0\res
+com.example.scalp_sense.app-jetified-fragment-ktx-1.7.1-34 C:\Users\Dell\.gradle\caches\transforms-3\cbc66ca2e9467f4a08873727da87bbec\transformed\jetified-fragment-ktx-1.7.1\res
+com.example.scalp_sense.app-browser-1.8.0-35 C:\Users\Dell\.gradle\caches\transforms-3\ce9d2b523ec8f22069a04e86a69a4a7a\transformed\browser-1.8.0\res
+com.example.scalp_sense.app-jetified-lifecycle-runtime-ktx-2.7.0-36 C:\Users\Dell\.gradle\caches\transforms-3\d2e01c12ec3a6689f39218dfad1ddd85\transformed\jetified-lifecycle-runtime-ktx-2.7.0\res
+com.example.scalp_sense.app-core-runtime-2.2.0-37 C:\Users\Dell\.gradle\caches\transforms-3\dd20528cfa0a276304f70bb56bebb8bd\transformed\core-runtime-2.2.0\res
+com.example.scalp_sense.app-jetified-profileinstaller-1.3.1-38 C:\Users\Dell\.gradle\caches\transforms-3\e3898096c8912b5e8859d9d38def915a\transformed\jetified-profileinstaller-1.3.1\res
+com.example.scalp_sense.app-jetified-savedstate-1.2.1-39 C:\Users\Dell\.gradle\caches\transforms-3\e78f364040516b46a64b955c60630ae6\transformed\jetified-savedstate-1.2.1\res
+com.example.scalp_sense.app-lifecycle-runtime-2.7.0-40 C:\Users\Dell\.gradle\caches\transforms-3\eaac101f545e00f8cc303e497797941a\transformed\lifecycle-runtime-2.7.0\res
+com.example.scalp_sense.app-lifecycle-livedata-2.7.0-41 C:\Users\Dell\.gradle\caches\transforms-3\f0dbaf28a2b84f915984e26b08bb1ae9\transformed\lifecycle-livedata-2.7.0\res
+com.example.scalp_sense.app-jetified-lifecycle-process-2.7.0-42 C:\Users\Dell\.gradle\caches\transforms-3\f3276b02d8a2d4072bcf8aeaa7cb1f1d\transformed\jetified-lifecycle-process-2.7.0\res
+com.example.scalp_sense.app-jetified-play-services-maps-18.2.0-43 C:\Users\Dell\.gradle\caches\transforms-3\fa5a7f2e26fdefd03fb07bb2829644e1\transformed\jetified-play-services-maps-18.2.0\res
+com.example.scalp_sense.app-debug-44 C:\Users\Dell\AppData\Local\Pub\Cache\hosted\pub.dev\cloud_firestore-5.6.3\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.example.scalp_sense.app-debug-45 C:\Users\Dell\AppData\Local\Pub\Cache\hosted\pub.dev\firebase_auth-5.4.2\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.example.scalp_sense.app-debug-46 C:\Users\Dell\AppData\Local\Pub\Cache\hosted\pub.dev\firebase_core-3.11.0\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.example.scalp_sense.app-debug-47 C:\Users\Dell\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_plugin_android_lifecycle-2.0.23\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.example.scalp_sense.app-debug-48 C:\Users\Dell\AppData\Local\Pub\Cache\hosted\pub.dev\geolocator_android-4.6.1\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.example.scalp_sense.app-debug-49 C:\Users\Dell\AppData\Local\Pub\Cache\hosted\pub.dev\google_maps_flutter_android-2.14.11\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.example.scalp_sense.app-debug-50 C:\Users\Dell\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+18\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.example.scalp_sense.app-debug-51 C:\Users\Dell\AppData\Local\Pub\Cache\hosted\pub.dev\shared_preferences_android-2.4.0\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.example.scalp_sense.app-debug-52 C:\Users\Dell\AppData\Local\Pub\Cache\hosted\pub.dev\url_launcher_android-6.3.14\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.example.scalp_sense.app-pngs-53 D:\fyp development work\Project work\Scalp Sense\android\app\build\generated\res\pngs\debug
+com.example.scalp_sense.app-res-54 D:\fyp development work\Project work\Scalp Sense\android\app\build\generated\res\processDebugGoogleServices
+com.example.scalp_sense.app-resValues-55 D:\fyp development work\Project work\Scalp Sense\android\app\build\generated\res\resValues\debug
+com.example.scalp_sense.app-packageDebugResources-56 D:\fyp development work\Project work\Scalp Sense\android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.example.scalp_sense.app-packageDebugResources-57 D:\fyp development work\Project work\Scalp Sense\android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.example.scalp_sense.app-debug-58 D:\fyp development work\Project work\Scalp Sense\android\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.example.scalp_sense.app-debug-59 D:\fyp development work\Project work\Scalp Sense\android\app\src\debug\res
+com.example.scalp_sense.app-main-60 D:\fyp development work\Project work\Scalp Sense\android\app\src\main\res
