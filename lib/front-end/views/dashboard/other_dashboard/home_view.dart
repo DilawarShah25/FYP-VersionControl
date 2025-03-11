@@ -15,7 +15,7 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Colors.yellow,
+      backgroundColor: Colors.blue.shade100, // Set background color for the body
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(

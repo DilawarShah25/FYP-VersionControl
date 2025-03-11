@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gcm_defaultSenderId" translatable="false">35113922736</string>
+    <string name="google_api_key" translatable="false">AIzaSyDwbsT9T4N1h90cN4GLdpEm6WAuaUWxkLg</string>
+    <string name="google_app_id" translatable="false">1:35113922736:android:7902ecb2a572c444208b75</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyDwbsT9T4N1h90cN4GLdpEm6WAuaUWxkLg</string>
+    <string name="google_storage_bucket" translatable="false">hair-loss-app.firebasestorage.app</string>
+    <string name="project_id" translatable="false">hair-loss-app</string>
+</resources>

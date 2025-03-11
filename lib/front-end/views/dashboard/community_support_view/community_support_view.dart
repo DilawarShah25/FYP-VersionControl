@@ -32,7 +32,7 @@ class _CommunitySupportViewState extends State<CommunitySupportView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70.0), // Height of the AppBar
+        preferredSize: const Size.fromHeight(60.0), // Height of the AppBar
         child: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,

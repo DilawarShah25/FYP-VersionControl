@@ -4,6 +4,7 @@ import '../dashboard/community_support_view/community_support_view.dart';
 import '../dashboard/other_dashboard/blog/blog_view.dart';
 import '../dashboard/other_dashboard/home_view.dart';
 import '../dashboard/other_dashboard/nearby dermatologist/nearby_dermatologists_view.dart';
+
 class Carousel extends StatefulWidget {
   final List<String> images;
   const Carousel({
@@ -48,11 +49,6 @@ class _CarouselState extends State<Carousel> {
   void _navigateToPage(BuildContext context, int index) {
     switch (index) {
       case 0:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const BlogView()),
-        );
-        break;
       case 1:
         Navigator.push(
           context,
@@ -70,7 +66,6 @@ class _CarouselState extends State<Carousel> {
           context,
           MaterialPageRoute(builder: (context) => const NearbyDermatologistsView()),
         );
-        break;
         break;
       default:
         Navigator.push(
@@ -126,7 +121,7 @@ class _CarouselState extends State<Carousel> {
                     'SCALP \n\t\t\t\t\t\tSENSE',
                     textAlign: TextAlign.start,
                     style: TextStyle(
-                      fontFamily: 'CCZoinks',  // Change the fontFamily to 'CCZoinks'
+                      fontFamily: 'CCZoinks',
                       color: Colors.white,
                       fontSize: 30.0,
                       fontWeight: FontWeight.w900,
@@ -139,7 +134,6 @@ class _CarouselState extends State<Carousel> {
                       ],
                     ),
                   ),
-
                 ),
               ),
               Expanded(
@@ -154,11 +148,11 @@ class _CarouselState extends State<Carousel> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Card Background
+                            // Card Background (Fixed: Now Transparent)
                             Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(15),
-                                color: Colors.white,
+                                color: Colors.transparent, // <-- Fix: Transparent Background
                                 boxShadow: const [
                                   BoxShadow(
                                     color: Colors.black26,

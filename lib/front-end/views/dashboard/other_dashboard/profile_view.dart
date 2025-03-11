@@ -3,87 +3,134 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
 
   @override
-  _ProfileViewState createState() => _ProfileViewState();
+  State<ProfileView> createState() => _ProfileViewState();
 }
 
-class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStateMixin {
-  final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _roleController = TextEditingController();
+class _ProfileViewState extends State<ProfileView>
+    with SingleTickerProviderStateMixin {
+  final _fullNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _roleController = TextEditingController();
 
   File? _profileImage;
   bool _isEditing = false;
+  bool _isLoading = false;
+  PhoneNumber? _initialPhoneNumber;
+  String? _currentCountryCode;
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _setupAnimation();
     _loadProfileData();
+  }
+
+  void _setupAnimation() {
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 800),
     );
-    _fadeAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeIn);
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
     _animationController.forward();
   }
 
   Future<void> _loadProfileData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _fullNameController.text = prefs.getString('fullName') ?? 'John Doe';
-      _usernameController.text = prefs.getString('name') ?? 'JohnDoe';
-      _emailController.text = prefs.getString('email') ?? 'johndoe@example.com';
-      _roleController.text = prefs.getString('role') ?? 'User';
-      _phoneController.text = prefs.getString('phone') ?? '+1234567890';
-    });
+    setState(() => _isLoading = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedPhone = prefs.getString('phone') ?? '+923437649799';
+      setState(() {
+        _fullNameController.text = prefs.getString('name') ?? 'John Doe';
+        _emailController.text = prefs.getString('email') ?? 'johndoe@example.com';
+        _roleController.text = prefs.getString('role') ?? 'User';
+        _initialPhoneNumber = PhoneNumber.fromCompleteNumber(completeNumber: savedPhone);
+        _phoneController.text = _initialPhoneNumber!.number;
+        _currentCountryCode = _initialPhoneNumber!.countryCode;
+      });
+    } catch (e) {
+      _showSnackBar('Error loading profile: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    setState(() => _isLoading = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('name', _fullNameController.text.trim());
+      await prefs.setString('email', _emailController.text.trim());
+      // Save complete phone number with country code
+      final completePhoneNumber = '$_currentCountryCode${_phoneController.text.trim()}';
+      await prefs.setString('phone', completePhoneNumber);
+
+      setState(() => _isEditing = false);
+      _showSuccessDialog();
+    } catch (e) {
+      _showSnackBar('Error saving profile: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _pickImage() async {
-    if (!_isEditing) return; // Only allow image picking in edit mode
-    final ImagePicker picker = ImagePicker();
-    final pickedOption = await showDialog<ImageSource>(
+    if (!_isEditing) return;
+
+    final ImageSource? source = await showDialog<ImageSource>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Choose Image Source'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, ImageSource.camera),
-              child: const Text('Camera')),
+            onPressed: () => Navigator.pop(context, ImageSource.camera),
+            child: const Text('Camera'),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(context, ImageSource.gallery),
-              child: const Text('Gallery')),
+            onPressed: () => Navigator.pop(context, ImageSource.gallery),
+            child: const Text('Gallery'),
+          ),
         ],
       ),
     );
 
-    if (pickedOption != null) {
-      final XFile? pickedFile = await picker.pickImage(source: pickedOption);
-      if (pickedFile != null) {
-        setState(() => _profileImage = File(pickedFile.path));
+    if (source != null) {
+      try {
+        final picker = ImagePicker();
+        final pickedFile = await picker.pickImage(
+          source: source,
+          maxHeight: 800,
+          maxWidth: 800,
+        );
+        if (pickedFile != null) {
+          setState(() => _profileImage = File(pickedFile.path));
+        }
+      } catch (e) {
+        _showSnackBar('Error picking image: $e');
       }
     }
   }
 
-  void _saveProfile() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('fullName', _fullNameController.text);
-    await prefs.setString('name', _usernameController.text);
-    await prefs.setString('email', _emailController.text);
-    await prefs.setString('phone', _phoneController.text);
-    // Role remains read-only
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
-    setState(() => _isEditing = false);
-
-    // Show popup dialog
+  void _showSuccessDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -91,11 +138,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         backgroundColor: Colors.white,
         title: const Text(
           'Success',
-          style: TextStyle(
-            color: Colors.green,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         content: const Row(
           children: [
@@ -122,13 +165,10 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     );
   }
 
-  void _toggleEditMode() => setState(() => _isEditing = !_isEditing);
-
   @override
   void dispose() {
     _animationController.dispose();
     _fullNameController.dispose();
-    _usernameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _roleController.dispose();
@@ -138,89 +178,92 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF004e92),
-                Color(0xFF000428),
-              ],
-            ),
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: const Text(
-              'Profile',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
-            centerTitle: true,
-          ),
-        ),
-      ),
+      appBar: _buildAppBar(),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF004e92),
-              Color(0xFF000428),
-            ],
+            colors: [Color(0xFF004e92), Color(0xFF000428)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, -4))
-                    ],
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : _buildBody(),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(60.0),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(colors: [Color(0xFF004e92), Color(0xFF000428)]),
+        ),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text(
+            'Profile',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+          centerTitle: true,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, -4),
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
-                        _buildProfileImage(),
-                        const SizedBox(height: 30),
-                        _buildTextField(_fullNameController, 'Full Name', Icons.person_outline, enabled: _isEditing),
-                        const SizedBox(height: 20),
-                        _buildTextField(_usernameController, 'Username', Icons.person, enabled: _isEditing),
-                        const SizedBox(height: 20),
-                        _buildTextField(_emailController, 'Email', Icons.email, enabled: _isEditing),
-                        const SizedBox(height: 20),
-                        _buildTextField(_roleController, 'Role', Icons.verified_user, enabled: false),
-                        const SizedBox(height: 20),
-                        _buildPhoneField(),
-                        const SizedBox(height: 30),
-                        _buildEditSaveButton(),
-                        const SizedBox(height: 30),
-                      ],
-                    ),
-                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildProfileImage(),
+                    const SizedBox(height: 30),
+                    _buildTextField(_fullNameController, 'Full Name', Icons.person_outline, enabled: _isEditing),
+                    const SizedBox(height: 20),
+                    _buildTextField(_emailController, 'Email', Icons.email, enabled: _isEditing),
+                    const SizedBox(height: 20),
+                    _buildTextField(_roleController, 'Role', Icons.verified_user, enabled: false),
+                    const SizedBox(height: 20),
+                    _buildPhoneField(),
+                    const SizedBox(height: 30),
+                    _buildEditSaveButton(),
+                    const SizedBox(height: 30),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -243,9 +286,10 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
               ),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4)),
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
             child: CircleAvatar(
@@ -275,7 +319,12 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool enabled = true}) {
+  Widget _buildTextField(
+      TextEditingController controller,
+      String label,
+      IconData icon, {
+        required bool enabled,
+      }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -292,7 +341,10 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           labelText: label,
           labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
           prefixIcon: Icon(icon, color: Colors.blueAccent),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
           filled: true,
           fillColor: Colors.transparent,
         ),
@@ -320,13 +372,28 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           filled: true,
           fillColor: Colors.transparent,
         ),
-        initialCountryCode: 'US',
+        initialCountryCode: _initialPhoneNumber?.countryISOCode,
+        initialValue: _initialPhoneNumber?.number,
         enabled: _isEditing,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        invalidNumberMessage: 'Invalid phone number',
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
-        onSubmitted: (value) => _phoneController.text = value,
+        showCountryFlag: true,
+        showDropdownIcon: _isEditing,
+        flagsButtonPadding: const EdgeInsets.only(left: 10),
         onChanged: (phone) {
           if (_isEditing) {
-            // Optional: Update controller in real-time if needed
+            setState(() {
+              _phoneController.text = phone.number;
+              _currentCountryCode = '+${phone.countryCode}';
+            });
+          }
+        },
+        onCountryChanged: (country) {
+          if (_isEditing) {
+            setState(() {
+              _currentCountryCode = '+${country.dialCode}';
+            });
           }
         },
       ),
@@ -335,7 +402,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
   Widget _buildEditSaveButton() {
     return GestureDetector(
-      onTap: _isEditing ? _saveProfile : _toggleEditMode,
+      onTap: _isLoading ? null : (_isEditing ? _saveProfile : () => setState(() => _isEditing = true)),
       child: Container(
         width: 200,
         padding: const EdgeInsets.symmetric(vertical: 15),
@@ -343,22 +410,29 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           gradient: LinearGradient(
             colors: [
               _isEditing ? Colors.green : Colors.blue,
-              _isEditing ? Colors.green.shade700 : Colors.blue.shade700
+              _isEditing ? Colors.green.shade700 : Colors.blue.shade700,
             ],
           ),
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                offset: const Offset(0, 4),
-                blurRadius: 8)
+              color: Colors.black.withOpacity(0.3),
+              offset: const Offset(0, 4),
+              blurRadius: 8,
+            ),
           ],
         ),
         child: Center(
-          child: Text(
+          child: _isLoading
+              ? const CircularProgressIndicator(color: Colors.white)
+              : Text(
             _isEditing ? 'Save' : 'Edit Profile',
             style: const TextStyle(
-                color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.1,
+            ),
           ),
         ),
       ),
