@@ -3,14 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:scalpsense/front-end/views/authentication/sign_up.dart';
 import '../../controllers/screen_navigation_controller.dart';
 
-class UserLoginView extends StatefulWidget {
-  const UserLoginView({Key? key}) : super(key: key);
+class LoginView extends StatefulWidget {
+  const LoginView({Key? key}) : super(key: key);
 
   @override
-  _UserLoginViewState createState() => _UserLoginViewState();
+  _LoginViewState createState() => _LoginViewState();
 }
 
-class _UserLoginViewState extends State<UserLoginView> {
+class _LoginViewState extends State<LoginView> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   String? errorMessage;
@@ -109,7 +109,7 @@ class _UserLoginViewState extends State<UserLoginView> {
                       ),
                       SizedBox(height: 10),
                       Text(
-                        "USER",
+                        "LOGIN",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,

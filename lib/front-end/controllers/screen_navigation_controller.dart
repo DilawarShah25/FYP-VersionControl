@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import '../views/authentication/login_view.dart';
 import '../views/dashboard/other_dashboard/blog/blog_view.dart';
 import '../views/dashboard/community_support_view/community_support_view.dart';
 import '../views/dashboard/other_dashboard/faq/faq_view.dart';
 import '../views/dashboard/other_dashboard/profile_view.dart';
 import '../views/dashboard/other_dashboard/home_view.dart';
-import 'role_controller.dart';
 
 class ScreensManager extends StatefulWidget {
   const ScreensManager({Key? key}) : super(key: key);
@@ -16,27 +16,22 @@ class ScreensManager extends StatefulWidget {
 class _ScreensManagerState extends State<ScreensManager> {
   int _selectedIndex = 0;
 
-  // Pages for each tab
   final List<Widget> _pages = [
     const HomeView(),
     const ProfileView(),
     const CommunitySupportView(),
   ];
 
-  // Handle tab selection
   void _onItemTapped(int index) {
     if (index != 3) {
-      // Change index if not the "More" item
       setState(() {
         _selectedIndex = index;
       });
     } else {
-      // Show popup menu for the "More" item
       _showPopupMenu(context);
     }
   }
 
-  // Show custom popup menu
   void _showPopupMenu(BuildContext context) {
     final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
     final RenderBox button = context.findRenderObject() as RenderBox;
@@ -46,8 +41,8 @@ class _ScreensManagerState extends State<ScreensManager> {
       context: context,
       color: Colors.white,
       position: RelativeRect.fromLTRB(
-        overlay.size.width - 100, // Adjust this value to position the menu correctly
-        overlay.size.height - 100, // Adjust this value to position the menu correctly
+        overlay.size.width - 100,
+        overlay.size.height - 100,
         0,
         0,
       ),
@@ -71,16 +66,15 @@ class _ScreensManagerState extends State<ScreensManager> {
       ],
     ).then((value) {
       if (value == 'LOGOUT') {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => RoleSelectionView()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginView()));
       } else if (value == 'BLOG') {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const BlogView()));
       } else if (value == 'FAQ') {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const FaqView())); // Replace with FAQView
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const FaqView()));
       }
     });
   }
 
-  // Build individual popup menu item with icon and text
   Widget _buildPopupMenuItem(IconData icon, String text) {
     return Row(
       children: [
@@ -97,11 +91,11 @@ class _ScreensManagerState extends State<ScreensManager> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white, // Keep this as the base color
       appBar: _selectedIndex == 0
-          ? null // Don't show AppBar for HomeView
+          ? null
           : PreferredSize(
-        preferredSize: const Size.fromHeight(0.0), // height of the AppBar
+        preferredSize: const Size.fromHeight(0.0),
         child: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -118,10 +112,23 @@ class _ScreensManagerState extends State<ScreensManager> {
           centerTitle: true,
         ),
       ),
-      body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: _pages,
+      body: Container(
+        // Add this Container to control the background
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF004e92),
+              Color(0xFF000428),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: IndexedStack(
+            index: _selectedIndex,
+            children: _pages,
+          ),
         ),
       ),
       bottomNavigationBar: Container(
