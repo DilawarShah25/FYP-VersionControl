@@ -26,8 +26,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
 
   File? _profileImage;
   String? errorMessage;
-  String? _currentCountryCode;
-  String? _fullPhoneNumber; // Store the complete number separately
+  String? _currentCountryCode = '+1'; // Default to US country code
   String _selectedRole = 'User';
   bool _showPassword = false;
   bool _showConfirmPassword = false;
@@ -43,7 +42,6 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     );
     _fadeAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeIn);
     _animationController.forward();
-    _currentCountryCode = '+1'; // Default US country code
   }
 
   @override
@@ -118,7 +116,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
-    final phone = _fullPhoneNumber ?? '$_currentCountryCode${_phoneController.text.trim()}';
+    final phone = '$_currentCountryCode${_phoneController.text.trim()}'; // Use current country code directly
 
     print('Registering with phone: $phone');
 
@@ -162,7 +160,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
       await prefs.setString('email', email);
       await prefs.setString('role', _selectedRole);
       await prefs.setString('phone', phone);
-      await prefs.setString('imageUrl', result['imageUrl']);
+      await prefs.setString('imageUrl', result['imageUrl'] ?? '');
 
       Navigator.pushReplacement(
         context,
@@ -339,7 +337,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
           if (value == null || value.trim().isEmpty) {
             return 'Please enter $label';
           }
-          if (label == "Email" && !_isValidEmail(value)) {
+          if (isEmail && !_isValidEmail(value)) {
             return 'Please enter a valid email';
           }
           return null;
@@ -377,18 +375,16 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
         keyboardType: TextInputType.phone,
         onChanged: (phone) {
           setState(() {
-            _phoneController.text = phone.number;
             _currentCountryCode = '+${phone.countryCode}';
-            _fullPhoneNumber = phone.completeNumber; // Use completeNumber from IntlPhoneField
-            print('Phone changed - Number: ${phone.number}, Country Code: $_currentCountryCode, Full: $_fullPhoneNumber');
+            _phoneController.text = phone.number; // Update controller with just the number
           });
+          print('Phone changed - Number: ${phone.number}, Country Code: $_currentCountryCode');
         },
         validator: (value) {
           if (value == null || value.number.isEmpty) {
             return 'Please enter a phone number';
           }
-          final fullNumber = _fullPhoneNumber ?? '$_currentCountryCode${value.number}';
-          print('Validating in validator: $fullNumber');
+          final fullNumber = '$_currentCountryCode${value.number}';
           if (!_isValidPhone(fullNumber)) {
             return 'Invalid phone number (9-15 digits required)';
           }

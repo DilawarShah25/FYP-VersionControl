@@ -46,14 +46,8 @@ class _CommunitySupportViewState extends State<CommunitySupportView> {
               ),
             ),
           ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
           title: const Padding(
-            padding: EdgeInsets.only(right: 50.0, top: 15.0),
+            padding: EdgeInsets.only(left: 10.0),
             child: Center(
               child: Text(
                 'Community Support',
@@ -66,6 +60,7 @@ class _CommunitySupportViewState extends State<CommunitySupportView> {
             ),
           ),
           centerTitle: true,
+          automaticallyImplyLeading: false, // This removes the back button
         ),
       ),
       body: Container(

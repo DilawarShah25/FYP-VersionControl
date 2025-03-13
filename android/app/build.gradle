@@ -9,6 +9,7 @@ plugins {
 android {
     namespace = "com.example.camera_gallery"
     compileSdk = flutter.compileSdkVersion
+//    compileSdkVersion 35
 //    ndkVersion = flutter.ndkVersion
     ndkVersion = "25.1.8937393"
 

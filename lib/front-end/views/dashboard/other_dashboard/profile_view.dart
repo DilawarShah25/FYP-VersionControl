@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
+
+import '../../../services/auth_service.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -12,8 +16,8 @@ class ProfileView extends StatefulWidget {
   State<ProfileView> createState() => _ProfileViewState();
 }
 
-class _ProfileViewState extends State<ProfileView>
-    with SingleTickerProviderStateMixin {
+class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStateMixin {
+  final AuthService _authService = AuthService();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -22,8 +26,9 @@ class _ProfileViewState extends State<ProfileView>
   File? _profileImage;
   bool _isEditing = false;
   bool _isLoading = false;
-  PhoneNumber? _initialPhoneNumber;
   String? _currentCountryCode;
+  String? _imageUrl;
+  String? _uid;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -32,7 +37,7 @@ class _ProfileViewState extends State<ProfileView>
   void initState() {
     super.initState();
     _setupAnimation();
-    _loadProfileData();
+    _initializeUser();
   }
 
   void _setupAnimation() {
@@ -47,38 +52,57 @@ class _ProfileViewState extends State<ProfileView>
     _animationController.forward();
   }
 
-  Future<void> _loadProfileData() async {
+  Future<void> _initializeUser() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedPhone = prefs.getString('phone') ?? '+923437649799';
-      setState(() {
-        _fullNameController.text = prefs.getString('name') ?? 'John Doe';
-        _emailController.text = prefs.getString('email') ?? 'johndoe@example.com';
-        _roleController.text = prefs.getString('role') ?? 'User';
-        _initialPhoneNumber = PhoneNumber.fromCompleteNumber(completeNumber: savedPhone);
-        _phoneController.text = _initialPhoneNumber!.number;
-        _currentCountryCode = _initialPhoneNumber!.countryCode;
-      });
+      User? user = _authService.getCurrentUser();
+      if (user == null) {
+        _showSnackBar('No user signed in. Please log in.');
+        Navigator.pop(context); // Redirect to login screen
+        return;
+      }
+      _uid = user.uid;
+      // Initial load handled by StreamBuilder
     } catch (e) {
-      _showSnackBar('Error loading profile: $e');
+      _showSnackBar('Error initializing user: $e');
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
   Future<void> _saveProfile() async {
+    if (_uid == null) {
+      _showSnackBar('No user ID available. Please log in again.');
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('name', _fullNameController.text.trim());
-      await prefs.setString('email', _emailController.text.trim());
-      // Save complete phone number with country code
-      final completePhoneNumber = '$_currentCountryCode${_phoneController.text.trim()}';
-      await prefs.setString('phone', completePhoneNumber);
+      String? newImageUrl = _imageUrl;
+      if (_profileImage != null) {
+        final ref = FirebaseStorage.instance.ref().child('profile_images/$_uid.jpg');
+        await ref.putFile(_profileImage!, SettableMetadata(contentType: 'image/jpeg'));
+        newImageUrl = await ref.getDownloadURL();
+      }
 
-      setState(() => _isEditing = false);
-      _showSuccessDialog();
+      final updatedData = {
+        'name': _fullNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'phone': _currentCountryCode! + _phoneController.text.trim(),
+        if (newImageUrl != null && newImageUrl.isNotEmpty) 'imageUrl': newImageUrl,
+      };
+
+      String? error = await _authService.updateUserData(_uid!, updatedData);
+      if (error != null) {
+        _showSnackBar(error);
+      } else {
+        setState(() {
+          _isEditing = false;
+          _imageUrl = newImageUrl;
+          _profileImage = null; // Clear local image after upload
+        });
+        _showSuccessDialog();
+      }
     } catch (e) {
       _showSnackBar('Error saving profile: $e');
     } finally {
@@ -110,11 +134,7 @@ class _ProfileViewState extends State<ProfileView>
     if (source != null) {
       try {
         final picker = ImagePicker();
-        final pickedFile = await picker.pickImage(
-          source: source,
-          maxHeight: 800,
-          maxWidth: 800,
-        );
+        final pickedFile = await picker.pickImage(source: source, maxHeight: 800, maxWidth: 800);
         if (pickedFile != null) {
           setState(() => _profileImage = File(pickedFile.path));
         }
@@ -125,44 +145,35 @@ class _ProfileViewState extends State<ProfileView>
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 20),
-        ),
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 30),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Profile updated successfully!',
-                style: TextStyle(fontSize: 16, color: Colors.black87),
-              ),
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          backgroundColor: Colors.white,
+          title: const Text('Success', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 20)),
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 30),
+              SizedBox(width: 10),
+              Expanded(child: Text('Profile updated successfully!', style: TextStyle(fontSize: 16, color: Colors.black87))),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'OK',
-              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -179,17 +190,42 @@ class _ProfileViewState extends State<ProfileView>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF004e92), Color(0xFF000428)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : _buildBody(),
+      body: _uid == null
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          : StreamBuilder<DocumentSnapshot>(
+        stream: _authService.getUserDataStream(_uid!),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting || _isLoading) {
+            return const Center(child: CircularProgressIndicator(color: Colors.white));
+          }
+          if (snapshot.hasError) {
+            _showSnackBar('Error loading profile: ${snapshot.error}');
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            _showSnackBar('Profile data not found in Firestore.');
+            return const Center(child: Text('Profile data not found.'));
+          }
+
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          if (!_isEditing) {
+            _fullNameController.text = data['name'] ?? '';
+            _emailController.text = data['email'] ?? '';
+            _roleController.text = data['role'] ?? 'User';
+            _imageUrl = data['imageUrl'] ?? '';
+            final savedPhone = data['phone'] ?? '+1234567890';
+            try {
+              final phoneNumber = PhoneNumber.fromCompleteNumber(completeNumber: savedPhone);
+              _phoneController.text = phoneNumber.number;
+              _currentCountryCode = phoneNumber.countryCode;
+            } catch (e) {
+              _phoneController.text = savedPhone.replaceAll(RegExp(r'^\+\d+'), '');
+              _currentCountryCode = '+1'; // Default to US if parsing fails
+            }
+          }
+
+          return _buildBody();
+        },
       ),
     );
   }
@@ -208,40 +244,38 @@ class _ProfileViewState extends State<ProfileView>
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'Profile',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
+          title: const Text('Profile', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
           centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              onPressed: () async {
+                await _authService.signOut();
+                Navigator.pop(context); // Redirect to login screen
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildBody() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Column(
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [Color(0xFF004e92), Color(0xFF000428)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+      ),
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, -4))],
+                ),
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
@@ -261,9 +295,9 @@ class _ProfileViewState extends State<ProfileView>
                   ],
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -279,24 +313,16 @@ class _ProfileViewState extends State<ProfileView>
             height: 160,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade200, Colors.blue.shade400],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              gradient: LinearGradient(colors: [Colors.blue.shade200, Colors.blue.shade400], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
             ),
             child: CircleAvatar(
               radius: 80,
               backgroundImage: _profileImage != null
                   ? FileImage(_profileImage!)
-                  : const NetworkImage('https://via.placeholder.com/150') as ImageProvider,
+                  : (_imageUrl != null && _imageUrl!.isNotEmpty
+                  ? NetworkImage(_imageUrl!)
+                  : const NetworkImage('https://via.placeholder.com/150')) as ImageProvider,
               backgroundColor: Colors.transparent,
             ),
           ),
@@ -319,12 +345,7 @@ class _ProfileViewState extends State<ProfileView>
     );
   }
 
-  Widget _buildTextField(
-      TextEditingController controller,
-      String label,
-      IconData icon, {
-        required bool enabled,
-      }) {
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {required bool enabled}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -341,10 +362,7 @@ class _ProfileViewState extends State<ProfileView>
           labelText: label,
           labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
           prefixIcon: Icon(icon, color: Colors.blueAccent),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
           filled: true,
           fillColor: Colors.transparent,
         ),
@@ -372,8 +390,8 @@ class _ProfileViewState extends State<ProfileView>
           filled: true,
           fillColor: Colors.transparent,
         ),
-        initialCountryCode: _initialPhoneNumber?.countryISOCode,
-        initialValue: _initialPhoneNumber?.number,
+        initialCountryCode: _currentCountryCode != null ? _currentCountryCode?.substring(1) : 'US',
+        initialValue: _phoneController.text.isNotEmpty ? _phoneController.text : null,
         enabled: _isEditing,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         invalidNumberMessage: 'Invalid phone number',
@@ -408,31 +426,17 @@ class _ProfileViewState extends State<ProfileView>
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              _isEditing ? Colors.green : Colors.blue,
-              _isEditing ? Colors.green.shade700 : Colors.blue.shade700,
-            ],
+            colors: [_isEditing ? Colors.green : Colors.blue, _isEditing ? Colors.green.shade700 : Colors.blue.shade700],
           ),
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              offset: const Offset(0, 4),
-              blurRadius: 8,
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), offset: const Offset(0, 4), blurRadius: 8)],
         ),
         child: Center(
           child: _isLoading
               ? const CircularProgressIndicator(color: Colors.white)
               : Text(
             _isEditing ? 'Save' : 'Edit Profile',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.1,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1),
           ),
         ),
       ),
