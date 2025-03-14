@@ -34,6 +34,13 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  // Define custom theme colors
+  static const Color primaryColor = Color(0xFF004e92); // Deep blue
+  static const Color secondaryColor = Color(0xFF000428); // Darker blue
+  static const Color accentColor = Color(0xFF00C4B4); // Teal accent
+  static const Color backgroundColor = Color(0xFFF5F7FA); // Light gray background
+  static const Color textColor = Color(0xFF2D3748); // Dark gray text
+
   @override
   void initState() {
     super.initState();
@@ -167,16 +174,17 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     final ImageSource? source = await showDialog<ImageSource>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Choose Image Source'),
+        title: const Text('Choose Image Source', style: TextStyle(color: textColor)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        backgroundColor: backgroundColor,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, ImageSource.camera),
-            child: const Text('Camera'),
+            child: const Text('Camera', style: TextStyle(color: accentColor)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, ImageSource.gallery),
-            child: const Text('Gallery'),
+            child: const Text('Gallery', style: TextStyle(color: accentColor)),
           ),
         ],
       ),
@@ -197,7 +205,12 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
   void _showSnackBar(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message, style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
@@ -207,19 +220,19 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         context: context,
         builder: (context) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          backgroundColor: Colors.white,
-          title: const Text('Success', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 20)),
+          backgroundColor: backgroundColor,
+          title: const Text('Success', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 20)),
           content: const Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 30),
+              Icon(Icons.check_circle, color: accentColor, size: 30),
               SizedBox(width: 10),
-              Expanded(child: Text('Profile updated successfully!', style: TextStyle(fontSize: 16, color: Colors.black87))),
+              Expanded(child: Text('Profile updated successfully!', style: TextStyle(fontSize: 16, color: textColor))),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+              child: const Text('OK', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -240,13 +253,24 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: _uid == null
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : _buildBody(),
+    return Theme(
+      data: ThemeData(
+        primaryColor: primaryColor,
+        scaffoldBackgroundColor: backgroundColor,
+        textTheme: const TextTheme(
+          headlineMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+          bodyMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor),
+          labelMedium: TextStyle(fontSize: 16, color: primaryColor, fontWeight: FontWeight.bold),
+        ),
+      ),
+      child: Scaffold(
+        appBar: _buildAppBar(),
+        body: _uid == null
+            ? const Center(child: CircularProgressIndicator(color: accentColor))
+            : _isLoading
+            ? const Center(child: CircularProgressIndicator(color: accentColor))
+            : _buildBody(),
+      ),
     );
   }
 
@@ -255,14 +279,14 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       preferredSize: const Size.fromHeight(60.0),
       child: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(colors: [Color(0xFF004e92), Color(0xFF000428)]),
+          gradient: LinearGradient(colors: [primaryColor, secondaryColor]),
         ),
         child: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: const Text('Profile', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+          title: const Text('Profile', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
           centerTitle: true,
-
+          automaticallyImplyLeading: false, // This removes the back button
         ),
       ),
     );
@@ -270,8 +294,16 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
   Widget _buildBody() {
     return Container(
+      // Gradient Background for the body
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFF004e92), Color(0xFF000428)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF004e92),
+            Color(0xFF000428),
+          ],
+          // begin: Alignment.topLeft,
+          // end: Alignment.bottomRight,
+        ),
       ),
       child: FadeTransition(
         opacity: _fadeAnimation,
@@ -280,17 +312,17 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: backgroundColor,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, -4))],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, -6))],
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
                       const SizedBox(height: 20),
                       _buildProfileImage(),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 32),
                       _buildTextField(_fullNameController, 'Full Name', Icons.person_outline, enabled: _isEditing),
                       const SizedBox(height: 20),
                       _buildTextField(_emailController, 'Email', Icons.email, enabled: _isEditing),
@@ -298,9 +330,9 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
                       _buildTextField(_roleController, 'Role', Icons.verified_user, enabled: false),
                       const SizedBox(height: 20),
                       _buildPhoneField(),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 32),
                       _buildButtons(),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -323,8 +355,8 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
             height: 160,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [Colors.blue.shade200, Colors.blue.shade400], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+              gradient: LinearGradient(colors: [primaryColor.withOpacity(0.8), accentColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
             ),
             child: CircleAvatar(
               radius: 80,
@@ -338,16 +370,16 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           ),
           if (_isEditing)
             Positioned(
-              bottom: 0,
-              right: 0,
+              bottom: 8,
+              right: 8,
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 5)],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 6)],
                 ),
-                child: const Icon(Icons.camera_alt, color: Colors.blue, size: 30),
+                child: const Icon(Icons.camera_alt, color: primaryColor, size: 28),
               ),
             ),
         ],
@@ -359,10 +391,9 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), offset: const Offset(2, 2), blurRadius: 5),
-          BoxShadow(color: Colors.white.withOpacity(0.7), offset: const Offset(-2, -2), blurRadius: 5),
+          BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, 2), blurRadius: 6),
         ],
       ),
       child: TextField(
@@ -370,18 +401,21 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         enabled: enabled,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
-          prefixIcon: Icon(icon, color: Colors.blueAccent),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+          labelStyle: const TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
+          prefixIcon: Icon(icon, color: primaryColor),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor),
       ),
     );
   }
 
-  // Helper method to get ISO country code from phone country code
   String _getIsoCountryCode(String phoneCountryCode) {
     final dialCode = phoneCountryCode.replaceAll('+', ''); // e.g., "92" from "+92"
     final country = countries.firstWhere(
@@ -401,10 +435,9 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), offset: const Offset(2, 2), blurRadius: 5),
-          BoxShadow(color: Colors.white.withOpacity(0.7), offset: const Offset(-2, -2), blurRadius: 5),
+          BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, 2), blurRadius: 6),
         ],
       ),
       child: _isEditing
@@ -412,21 +445,20 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         controller: _phoneNumberPartController,
         decoration: const InputDecoration(
           labelText: 'Phone Number',
-          labelStyle: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+          labelStyle: TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
           border: InputBorder.none,
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: Colors.white,
+          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
-        initialCountryCode: _phoneCountryCode != null
-            ? _getIsoCountryCode(_phoneCountryCode!) // Convert "+92" to "PK"
-            : 'US', // Default to "US" if null
+        initialCountryCode: _phoneCountryCode != null ? _getIsoCountryCode(_phoneCountryCode!) : 'US',
         enabled: true,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         invalidNumberMessage: 'Invalid phone number',
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor),
         showCountryFlag: true,
         showDropdownIcon: true,
-        flagsButtonPadding: const EdgeInsets.only(left: 10),
+        flagsButtonPadding: const EdgeInsets.only(left: 12),
         onCountryChanged: (country) {
           setState(() {
             _phoneCountryCode = '+${country.dialCode}';
@@ -435,8 +467,8 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         },
         onChanged: (phone) {
           setState(() {
-            _phoneCountryCode = phone.countryCode; // e.g., "+92"
-            _phoneNumberPartController.text = phone.number; // e.g., "3001234567"
+            _phoneCountryCode = phone.countryCode;
+            _phoneNumberPartController.text = phone.number;
             print('Phone changed: countryCode=$_phoneCountryCode, number=${_phoneNumberPartController.text}');
           });
         },
@@ -449,13 +481,14 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         enabled: false,
         decoration: InputDecoration(
           labelText: 'Phone Number',
-          labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
-          prefixIcon: const Icon(Icons.phone, color: Colors.blueAccent),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+          labelStyle: const TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
+          prefixIcon: const Icon(Icons.phone, color: primaryColor),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor),
       ),
     );
   }
@@ -475,39 +508,39 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
             }),
             child: Container(
               width: 120,
-              padding: const EdgeInsets.symmetric(vertical: 15),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.grey, Colors.grey.shade700]),
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), offset: const Offset(0, 4), blurRadius: 8)],
+                gradient: const LinearGradient(colors: [Colors.grey, Colors.grey]),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), offset: const Offset(0, 4), blurRadius: 8)],
               ),
               child: const Center(
                 child: Text(
                   'Cancel',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
           ),
-        if (_isEditing) const SizedBox(width: 20),
+        if (_isEditing) const SizedBox(width: 16),
         GestureDetector(
           onTap: _isLoading ? null : (_isEditing ? _saveProfile : () => setState(() => _isEditing = true)),
           child: Container(
             width: 120,
-            padding: const EdgeInsets.symmetric(vertical: 15),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [_isEditing ? Colors.green : Colors.blue, _isEditing ? Colors.green.shade700 : Colors.blue.shade700],
+                colors: [_isEditing ? accentColor : primaryColor, _isEditing ? accentColor.withOpacity(0.8) : primaryColor.withOpacity(0.8)],
               ),
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), offset: const Offset(0, 4), blurRadius: 8)],
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), offset: const Offset(0, 4), blurRadius: 8)],
             ),
             child: Center(
               child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : Text(
                 _isEditing ? 'Save' : 'Edit',
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
           ),

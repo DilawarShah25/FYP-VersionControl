@@ -31,6 +31,13 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  // Theme constants
+  static const Color primaryColor = Color(0xFF1E3C72); // Deep blue
+  static const Color secondaryColor = Color(0xFF2A5298); // Lighter blue
+  static const Color accentColor = Color(0xFF00C4B4); // Teal accent
+  static const Color backgroundColor = Color(0xFFF5F7FA); // Light gray
+  static const Color textColor = Color(0xFF2D3748); // Dark gray
+
   @override
   void initState() {
     super.initState();
@@ -65,23 +72,23 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: backgroundColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Choose Image Source', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Choose Image Source', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: Color(0xFF1976D2)),
-              title: const Text('Camera'),
+              leading: const Icon(Icons.camera_alt, color: primaryColor),
+              title: const Text('Camera', style: TextStyle(color: textColor)),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF1976D2)),
-              title: const Text('Gallery'),
+              leading: const Icon(Icons.photo_library, color: primaryColor),
+              title: const Text('Gallery', style: TextStyle(color: textColor)),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -130,7 +137,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     }
 
     if (!_isValidPhoneNumberPart(phoneNumberPart)) {
-      setState(() => errorMessage = 'Invalid phone number (9-12 digits, no leading 0).');
+      setState(() => errorMessage = 'Invalid phone number (6-12 digits, no leading 0).');
       return;
     }
 
@@ -171,25 +178,36 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+    return Theme(
+      data: ThemeData(
+        primaryColor: primaryColor,
+        scaffoldBackgroundColor: backgroundColor,
+        textTheme: const TextTheme(
+          headlineLarge: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Colors.white),
+          bodyMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: textColor),
+          labelMedium: TextStyle(fontSize: 14, color: primaryColor, fontWeight: FontWeight.w600),
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  _buildSignUpForm(),
-                ],
+      ),
+      child: Scaffold(
+        body: Container(
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [primaryColor, secondaryColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    _buildSignUpForm(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -202,13 +220,13 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 40),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
+        gradient: LinearGradient(
+          colors: [primaryColor.withOpacity(0.9), secondaryColor],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 6))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -218,21 +236,30 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
             child: Stack(
               alignment: Alignment.bottomRight,
               children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundImage: _profileImage != null
-                      ? FileImage(_profileImage!)
-                      : const NetworkImage('https://via.placeholder.com/150') as ImageProvider,
-                  backgroundColor: Colors.white,
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(colors: [primaryColor.withOpacity(0.8), accentColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+                  ),
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundImage: _profileImage != null
+                        ? FileImage(_profileImage!)
+                        : const NetworkImage('https://via.placeholder.com/150') as ImageProvider,
+                    backgroundColor: Colors.transparent,
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 5)],
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 6)],
                   ),
-                  child: const Icon(Icons.camera_alt, color: Color(0xFF1976D2), size: 24),
+                  child: const Icon(Icons.camera_alt, color: primaryColor, size: 24),
                 ),
               ],
             ),
@@ -240,13 +267,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
           const SizedBox(height: 20),
           const Text(
             'Create Account',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 34,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-              shadows: [Shadow(color: Colors.black26, blurRadius: 5, offset: Offset(2, 2))],
-            ),
+            style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2),
           ),
           const SizedBox(height: 10),
           const Text(
@@ -261,9 +282,9 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   Widget _buildSignUpForm() {
     return Container(
       padding: const EdgeInsets.all(30),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       ),
       child: Form(
         key: _formKey,
@@ -301,20 +322,21 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isEmail = false}) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, 2), blurRadius: 6)],
       ),
       child: TextFormField(
         controller: controller,
         keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
-        style: const TextStyle(color: Colors.black87, fontSize: 16),
+        style: const TextStyle(color: textColor, fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
-          prefixIcon: Icon(icon, color: const Color(0xFF1976D2)),
+          labelStyle: const TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
+          prefixIcon: Icon(icon, color: primaryColor),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         ),
         validator: (value) {
@@ -329,20 +351,21 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   Widget _buildPhoneField() {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, 2), blurRadius: 6)],
       ),
       child: IntlPhoneField(
         controller: _phoneNumberPartController,
-        decoration: InputDecoration(
+        decoration: const InputDecoration(
           labelText: 'Phone Number',
-          labelStyle: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+          labelStyle: TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
+          border: InputBorder.none,
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
-          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+          contentPadding: EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         ),
-        style: const TextStyle(color: Colors.black87, fontSize: 16),
+        style: const TextStyle(color: textColor, fontSize: 16),
         showCountryFlag: true,
         flagsButtonPadding: const EdgeInsets.only(left: 10),
         onCountryChanged: (country) {
@@ -353,7 +376,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
         },
         validator: (value) {
           if (value == null || value.number.isEmpty) return 'Please enter a phone number';
-          if (!_isValidPhoneNumberPart(value.number)) return 'Invalid phone number (9-12 digits, no leading 0)';
+          if (!_isValidPhoneNumberPart(value.number)) return 'Invalid phone number (6-12 digits, no leading 0)';
           return null;
         },
       ),
@@ -363,32 +386,33 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   Widget _buildPasswordField(TextEditingController controller, String label, {bool isConfirm = false}) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, 2), blurRadius: 6)],
       ),
       child: TextFormField(
         controller: controller,
         obscureText: isConfirm ? !_showConfirmPassword : !_showPassword,
-        style: const TextStyle(color: Colors.black87, fontSize: 16),
+        style: const TextStyle(color: textColor, fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
-          prefixIcon: const Icon(Icons.lock, color: Color(0xFF1976D2)),
+          labelStyle: const TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
+          prefixIcon: const Icon(Icons.lock, color: primaryColor),
           suffixIcon: IconButton(
             icon: Icon(
               isConfirm ? (_showConfirmPassword ? Icons.visibility : Icons.visibility_off) : (_showPassword ? Icons.visibility : Icons.visibility_off),
-              color: const Color(0xFF1976D2),
+              color: primaryColor,
             ),
             onPressed: () => setState(() => isConfirm ? _showConfirmPassword = !_showConfirmPassword : _showPassword = !_showPassword),
           ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) return 'Please enter $label';
-          if (!isConfirm && !_isValidPassword(value)) return 'Password must be 6+ characters with a special character';
+          if (!isConfirm && !_isValidPassword(value)) return 'Password must be 6+ chars with a special char';
           if (isConfirm && value != _passwordController.text) return 'Passwords do not match';
           return null;
         },
@@ -410,45 +434,41 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
         label: Text(
           role,
           style: TextStyle(
-            color: _selectedRole == role ? Colors.white : const Color(0xFF1976D2),
-            fontWeight: FontWeight.bold,
+            color: _selectedRole == role ? Colors.white : primaryColor,
+            fontWeight: FontWeight.w600,
           ),
         ),
         selected: _selectedRole == role,
         onSelected: (selected) => setState(() => _selectedRole = role),
-        selectedColor: const Color(0xFF1976D2),
+        selectedColor: primaryColor,
         backgroundColor: Colors.grey.shade200,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.2),
       ),
     );
   }
 
   Widget _buildRegisterButton() {
-    return ElevatedButton(
-      onPressed: _register,
-      style: ElevatedButton.styleFrom(
+    return GestureDetector(
+      onTap: _register,
+      child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18),
-        backgroundColor: Colors.transparent,
-        shadowColor: Colors.black.withOpacity(0.3),
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      ),
-      child: Ink(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
+          gradient: LinearGradient(
+            colors: [primaryColor, secondaryColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), offset: const Offset(0, 4), blurRadius: 8)],
         ),
-        child: Container(
-          alignment: Alignment.center,
-          constraints: const BoxConstraints(maxWidth: 300, minHeight: 50),
-          child: const Text(
+        child: const Center(
+          child: Text(
             'Register',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600, letterSpacing: 1.2),
           ),
         ),
       ),
@@ -465,7 +485,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
           child: const Text(
             "Login",
             style: TextStyle(
-              color: Color(0xFF1976D2),
+              color: accentColor,
               fontWeight: FontWeight.bold,
               decoration: TextDecoration.underline,
             ),
