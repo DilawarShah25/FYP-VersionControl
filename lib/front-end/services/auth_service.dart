@@ -8,7 +8,7 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // Register user with email and password, returns error, imageUrl, and uid
+  // Register user with email and password
   Future<Map<String, dynamic>> registerWithEmailAndPassword({
     required String name,
     required String email,
