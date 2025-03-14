@@ -3,7 +3,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
-import 'package:intl_phone_field/phone_number.dart';
 import '../../services/auth_service.dart';
 import 'verification_view.dart';
 
@@ -16,17 +15,16 @@ class SignUpView extends StatefulWidget {
 
 class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
-
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _phoneNumberPartController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   File? _profileImage;
   String? errorMessage;
-  String? _currentCountryCode = '+1'; // Default to US country code
+  String? _phoneCountryCode;
   String _selectedRole = 'User';
   bool _showPassword = false;
   bool _showConfirmPassword = false;
@@ -51,20 +49,13 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _phoneController.dispose();
+    _phoneNumberPartController.dispose();
     super.dispose();
   }
 
-  bool _isValidEmail(String email) => email.contains('@') && email.contains('.');
+  bool _isValidEmail(String email) => RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email);
   bool _isValidPassword(String password) => password.length >= 6 && RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password);
-  bool _isValidPhone(String phone) {
-    print('Validating phone: $phone');
-    final cleanedPhone = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-    // Accept numbers with country code (+) followed by 9-15 digits total
-    final isValid = cleanedPhone.length >= 10 && cleanedPhone.length <= 16 && RegExp(r'^\+\d+$').hasMatch(cleanedPhone);
-    print('Phone validation result: $isValid (length: ${cleanedPhone.length})');
-    return isValid;
-  }
+  bool _isValidPhoneNumberPart(String numberPart) => numberPart.length >= 6 && numberPart.length <= 12 && !numberPart.startsWith('0');
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -100,28 +91,26 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
 
     if (pickedOption != null) {
       final XFile? pickedFile = await picker.pickImage(source: pickedOption);
-      if (pickedFile != null) {
-        setState(() => _profileImage = File(pickedFile.path));
-      }
+      if (pickedFile != null) setState(() => _profileImage = File(pickedFile.path));
     }
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) {
-      print('Form validation failed');
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
-    final phone = '$_currentCountryCode${_phoneController.text.trim()}'; // Use current country code directly
+    final phoneNumberPart = _phoneNumberPartController.text.trim();
 
-    print('Registering with phone: $phone');
-
-    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || phone.isEmpty) {
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || phoneNumberPart.isEmpty) {
       setState(() => errorMessage = 'All fields are required.');
+      return;
+    }
+
+    if (_phoneCountryCode == null) {
+      setState(() => errorMessage = 'Please select a country code.');
       return;
     }
 
@@ -140,16 +129,24 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
       return;
     }
 
-    if (!_isValidPhone(phone)) {
-      setState(() => errorMessage = 'Invalid phone number format (9-15 digits required).');
+    if (!_isValidPhoneNumberPart(phoneNumberPart)) {
+      setState(() => errorMessage = 'Invalid phone number (9-12 digits, no leading 0).');
       return;
     }
+
+    print('Registering with:');
+    print('Name: $name');
+    print('Email: $email');
+    print('PhoneCountryCode: $_phoneCountryCode');
+    print('PhoneNumberPart: $phoneNumberPart');
+    print('Role: $_selectedRole');
 
     Map<String, dynamic> result = await _authService.registerWithEmailAndPassword(
       name: name,
       email: email,
       password: password,
-      phone: phone,
+      phoneCountryCode: _phoneCountryCode!,
+      phoneNumberPart: phoneNumberPart,
       role: _selectedRole,
       profileImage: _profileImage,
     );
@@ -159,7 +156,8 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
       await prefs.setString('name', name);
       await prefs.setString('email', email);
       await prefs.setString('role', _selectedRole);
-      await prefs.setString('phone', phone);
+      await prefs.setString('phoneCountryCode', _phoneCountryCode!);
+      await prefs.setString('phoneNumberPart', phoneNumberPart);
       await prefs.setString('imageUrl', result['imageUrl'] ?? '');
 
       Navigator.pushReplacement(
@@ -210,9 +208,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
           end: Alignment.bottomCenter,
         ),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -222,19 +218,12 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
             child: Stack(
               alignment: Alignment.bottomRight,
               children: [
-                TweenAnimationBuilder(
-                  tween: Tween<double>(begin: 0, end: 1),
-                  duration: const Duration(milliseconds: 800),
-                  builder: (context, value, child) => Transform.scale(
-                    scale: value,
-                    child: CircleAvatar(
-                      radius: 60,
-                      backgroundImage: _profileImage != null
-                          ? FileImage(_profileImage!)
-                          : const NetworkImage('https://via.placeholder.com/150') as ImageProvider,
-                      backgroundColor: Colors.white,
-                    ),
-                  ),
+                CircleAvatar(
+                  radius: 60,
+                  backgroundImage: _profileImage != null
+                      ? FileImage(_profileImage!)
+                      : const NetworkImage('https://via.placeholder.com/150') as ImageProvider,
+                  backgroundColor: Colors.white,
                 ),
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -313,9 +302,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: TextFormField(
         controller: controller,
@@ -327,19 +314,12 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
           prefixIcon: Icon(icon, color: const Color(0xFF1976D2)),
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         ),
         validator: (value) {
-          if (value == null || value.trim().isEmpty) {
-            return 'Please enter $label';
-          }
-          if (isEmail && !_isValidEmail(value)) {
-            return 'Please enter a valid email';
-          }
+          if (value == null || value.trim().isEmpty) return 'Please enter $label';
+          if (isEmail && !_isValidEmail(value)) return 'Please enter a valid email';
           return null;
         },
       ),
@@ -350,44 +330,30 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: IntlPhoneField(
-        controller: _phoneController,
+        controller: _phoneNumberPartController,
         decoration: InputDecoration(
           labelText: 'Phone Number',
           labelStyle: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         ),
-        initialCountryCode: 'US',
         style: const TextStyle(color: Colors.black87, fontSize: 16),
         showCountryFlag: true,
         flagsButtonPadding: const EdgeInsets.only(left: 10),
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        keyboardType: TextInputType.phone,
+        onCountryChanged: (country) {
+          setState(() => _phoneCountryCode = '+${country.dialCode}');
+        },
         onChanged: (phone) {
-          setState(() {
-            _currentCountryCode = '+${phone.countryCode}';
-            _phoneController.text = phone.number; // Update controller with just the number
-          });
-          print('Phone changed - Number: ${phone.number}, Country Code: $_currentCountryCode');
+          setState(() => _phoneNumberPartController.text = phone.number);
         },
         validator: (value) {
-          if (value == null || value.number.isEmpty) {
-            return 'Please enter a phone number';
-          }
-          final fullNumber = '$_currentCountryCode${value.number}';
-          if (!_isValidPhone(fullNumber)) {
-            return 'Invalid phone number (9-15 digits required)';
-          }
+          if (value == null || value.number.isEmpty) return 'Please enter a phone number';
+          if (!_isValidPhoneNumberPart(value.number)) return 'Invalid phone number (9-12 digits, no leading 0)';
           return null;
         },
       ),
@@ -398,9 +364,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: TextFormField(
         controller: controller,
@@ -419,22 +383,13 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
           ),
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         ),
         validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
-          }
-          if (!isConfirm && !_isValidPassword(value)) {
-            return 'Password must be 6+ characters with a special character';
-          }
-          if (isConfirm && value != _passwordController.text) {
-            return 'Passwords do not match';
-          }
+          if (value == null || value.isEmpty) return 'Please enter $label';
+          if (!isConfirm && !_isValidPassword(value)) return 'Password must be 6+ characters with a special character';
+          if (isConfirm && value != _passwordController.text) return 'Passwords do not match';
           return null;
         },
       ),
@@ -493,12 +448,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
           constraints: const BoxConstraints(maxWidth: 300, minHeight: 50),
           child: const Text(
             'Register',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2),
           ),
         ),
       ),

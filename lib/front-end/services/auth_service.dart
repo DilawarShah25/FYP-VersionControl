@@ -8,17 +8,17 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // Register user with email and password, returns error and imageUrl
+  // Register user with email and password, returns error, imageUrl, and uid
   Future<Map<String, dynamic>> registerWithEmailAndPassword({
     required String name,
     required String email,
     required String password,
-    required String phone,
+    required String phoneCountryCode,
+    required String phoneNumberPart,
     required String role,
     File? profileImage,
   }) async {
     try {
-      // Create user with email and password
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
@@ -29,35 +29,29 @@ class AuthService {
         return {'error': 'User creation failed: No user returned', 'imageUrl': '', 'uid': null};
       }
 
-      // Send email verification
       await user.sendEmailVerification();
 
       String uid = user.uid;
       String imageUrl = '';
 
-      // Upload profile image if provided
       if (profileImage != null) {
         try {
           Reference storageRef = _storage.ref().child('profile_images/$uid.jpg');
-          UploadTask uploadTask = storageRef.putFile(
-            profileImage,
-            SettableMetadata(contentType: "image/jpeg"),
-          );
+          UploadTask uploadTask = storageRef.putFile(profileImage, SettableMetadata(contentType: "image/jpeg"));
           TaskSnapshot snapshot = await uploadTask;
           imageUrl = await snapshot.ref.getDownloadURL();
         } catch (e) {
-          // Delete the user if image upload fails
           await user.delete();
           return {'error': 'Image upload failed: ${e.toString()}', 'imageUrl': '', 'uid': null};
         }
       }
 
-      // Save user data to Firestore
       Map<String, dynamic> userData = {
         'name': name.trim(),
         'email': email.trim(),
         'role': role,
-        'phone': phone,
+        'phoneCountryCode': phoneCountryCode,
+        'phoneNumberPart': phoneNumberPart,
         'imageUrl': imageUrl,
         'uid': uid,
         'createdAt': FieldValue.serverTimestamp(),
@@ -67,7 +61,8 @@ class AuthService {
 
       await _firestore.collection('users').doc(uid).set(userData);
 
-      return {'error': null, 'imageUrl': imageUrl, 'uid': uid}; // Success
+      print('User data saved to Firestore: $userData');
+      return {'error': null, 'imageUrl': imageUrl, 'uid': uid};
     } on FirebaseAuthException catch (e) {
       String errorMessage;
       switch (e.code) {
@@ -114,8 +109,8 @@ class AuthService {
       User? user = _auth.currentUser;
       if (user == null) return false;
 
-      await user.reload(); // Refresh user data
-      user = _auth.currentUser; // Get updated user instance
+      await user.reload();
+      user = _auth.currentUser;
 
       if (user != null && user.emailVerified) {
         await _firestore.collection('users').doc(user.uid).update({
@@ -135,15 +130,9 @@ class AuthService {
   Future<String?> resendVerificationEmail() async {
     try {
       User? user = _auth.currentUser;
-      if (user == null) {
-        return 'No user is currently signed in.';
-      }
+      if (user == null) return 'No user is currently signed in.';
+      if (user.emailVerified) return 'Email is already verified.';
 
-      if (user.emailVerified) {
-        return 'Email is already verified.';
-      }
-
-      // Prevent sending too many requests
       final lastSent = (await _firestore.collection('users').doc(user.uid).get())['lastVerificationSent'] as Timestamp?;
       if (lastSent != null && DateTime.now().difference(lastSent.toDate()).inMinutes < 1) {
         return 'Please wait before requesting another verification email.';
@@ -153,7 +142,7 @@ class AuthService {
       await _firestore.collection('users').doc(user.uid).update({
         'lastVerificationSent': FieldValue.serverTimestamp(),
       });
-      return null; // Success
+      return null;
     } on FirebaseAuthException catch (e) {
       return 'Error resending verification email: ${e.message}';
     } catch (e) {
@@ -161,17 +150,19 @@ class AuthService {
     }
   }
 
-  // Update user profile in Firestore (specific fields)
+  // Update user profile in Firestore
   Future<String?> updateUserProfile({
     required String uid,
     String? name,
-    String? phone,
+    String? phoneCountryCode,
+    String? phoneNumberPart,
     File? profileImage,
   }) async {
     try {
       Map<String, dynamic> updates = {};
       if (name != null) updates['name'] = name.trim();
-      if (phone != null) updates['phone'] = phone;
+      if (phoneCountryCode != null) updates['phoneCountryCode'] = phoneCountryCode;
+      if (phoneNumberPart != null) updates['phoneNumberPart'] = phoneNumberPart;
 
       if (profileImage != null) {
         Reference storageRef = _storage.ref().child('profile_images/$uid.jpg');
@@ -183,32 +174,28 @@ class AuthService {
       if (updates.isNotEmpty) {
         await _firestore.collection('users').doc(uid).update(updates);
       }
-      return null; // Success
+      return null;
     } catch (e) {
       return 'Error updating profile: ${e.toString()}';
     }
   }
 
-  // Update user data in Firestore (generic update with Map)
+  // Update user data in Firestore (generic update)
   Future<String?> updateUserData(String uid, Map<String, dynamic> updatedData) async {
     try {
-      // Ensure uid matches current user for security
       User? currentUser = _auth.currentUser;
       if (currentUser == null || currentUser.uid != uid) {
         return 'Unauthorized: No user signed in or UID mismatch';
       }
 
-      // Sanitize updatedData to trim strings and remove null values
       Map<String, dynamic> sanitizedData = {};
       updatedData.forEach((key, value) {
-        if (value != null) {
-          sanitizedData[key] = (value is String) ? value.trim() : value;
-        }
+        if (value != null) sanitizedData[key] = (value is String) ? value.trim() : value;
       });
 
       if (sanitizedData.isNotEmpty) {
         await _firestore.collection('users').doc(uid).update(sanitizedData);
-        return null; // Success
+        return null;
       }
       return 'No valid data provided to update';
     } catch (e) {
@@ -220,9 +207,7 @@ class AuthService {
   Future<Map<String, dynamic>> getUserData(String uid) async {
     try {
       DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
-      if (doc.exists) {
-        return doc.data() as Map<String, dynamic>;
-      }
+      if (doc.exists) return doc.data() as Map<String, dynamic>;
       return {'error': 'User data not found'};
     } catch (e) {
       return {'error': 'Error fetching user data: ${e.toString()}'};

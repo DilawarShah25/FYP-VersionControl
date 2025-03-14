@@ -1,12 +1,12 @@
+import 'dart:async'; // For StreamSubscription
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // For DocumentSnapshot
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
-import 'package:intl_phone_field/phone_number.dart';
-
+import 'package:intl_phone_field/countries.dart'; // Import for country list
 import '../../../services/auth_service.dart';
 
 class ProfileView extends StatefulWidget {
@@ -20,15 +20,16 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
   final AuthService _authService = AuthService();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _phoneNumberPartController = TextEditingController();
   final _roleController = TextEditingController();
 
   File? _profileImage;
   bool _isEditing = false;
   bool _isLoading = false;
-  String? _currentCountryCode;
+  String? _phoneCountryCode; // e.g., "+92"
   String? _imageUrl;
   String? _uid;
+  StreamSubscription<DocumentSnapshot>? _profileListener;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -36,20 +37,13 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _setupAnimation();
-    _initializeUser();
-  }
-
-  void _setupAnimation() {
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
     _animationController.forward();
+    _initializeUser();
   }
 
   Future<void> _initializeUser() async {
@@ -58,11 +52,12 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       User? user = _authService.getCurrentUser();
       if (user == null) {
         _showSnackBar('No user signed in. Please log in.');
-        Navigator.pop(context); // Redirect to login screen
+        Navigator.pop(context);
         return;
       }
       _uid = user.uid;
-      // Initial load handled by StreamBuilder
+      print('Initializing user with UID: $_uid');
+      _listenToProfileData();
     } catch (e) {
       _showSnackBar('Error initializing user: $e');
     } finally {
@@ -70,9 +65,64 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     }
   }
 
+  void _listenToProfileData() {
+    _profileListener?.cancel(); // Cancel any existing subscription
+    _profileListener = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_uid)
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists) {
+        final userData = snapshot.data() as Map<String, dynamic>;
+        print('Profile data from Firebase: $userData');
+        _updateProfileUI(userData);
+      } else {
+        _showSnackBar('User data not found in Firebase.');
+        print('No data exists for UID: $_uid');
+      }
+    }, onError: (e) {
+      _showSnackBar('Error listening to profile data: $e');
+      print('Error in profile listener: $e');
+    });
+  }
+
+  void _updateProfileUI(Map<String, dynamic> userData) {
+    if (mounted) {
+      setState(() {
+        _fullNameController.text = userData['name'] ?? '';
+        _emailController.text = userData['email'] ?? '';
+        _roleController.text = userData['role'] ?? 'User';
+        _imageUrl = userData['imageUrl'] ?? '';
+        _phoneCountryCode = userData['phoneCountryCode']?.toString() ?? '+1'; // Default to "+1" if null
+        _phoneNumberPartController.text = userData['phoneNumberPart'] ?? '';
+        print('Updated UI: phoneCountryCode=$_phoneCountryCode, phoneNumberPart=${_phoneNumberPartController.text}');
+      });
+    }
+  }
+
+  bool _isValidPhoneNumberPart(String numberPart) => numberPart.length >= 9 && numberPart.length <= 12 && !numberPart.startsWith('0');
+
   Future<void> _saveProfile() async {
     if (_uid == null) {
       _showSnackBar('No user ID available. Please log in again.');
+      return;
+    }
+
+    final phoneNumberPart = _phoneNumberPartController.text.trim();
+    if (_fullNameController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your full name');
+      return;
+    }
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(_emailController.text.trim())) {
+      _showSnackBar('Please enter a valid email');
+      return;
+    }
+    if (_phoneCountryCode == null) {
+      _showSnackBar('Please select a country code');
+      return;
+    }
+    if (!_isValidPhoneNumberPart(phoneNumberPart)) {
+      _showSnackBar('Phone number must be 9-12 digits and not start with 0');
       return;
     }
 
@@ -88,7 +138,8 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       final updatedData = {
         'name': _fullNameController.text.trim(),
         'email': _emailController.text.trim(),
-        'phone': _currentCountryCode! + _phoneController.text.trim(),
+        'phoneCountryCode': _phoneCountryCode!,
+        'phoneNumberPart': phoneNumberPart,
         if (newImageUrl != null && newImageUrl.isNotEmpty) 'imageUrl': newImageUrl,
       };
 
@@ -99,7 +150,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         setState(() {
           _isEditing = false;
           _imageUrl = newImageUrl;
-          _profileImage = null; // Clear local image after upload
+          _profileImage = null;
         });
         _showSuccessDialog();
       }
@@ -178,10 +229,11 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
   @override
   void dispose() {
+    _profileListener?.cancel();
     _animationController.dispose();
     _fullNameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
+    _phoneNumberPartController.dispose();
     _roleController.dispose();
     super.dispose();
   }
@@ -192,41 +244,9 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       appBar: _buildAppBar(),
       body: _uid == null
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : StreamBuilder<DocumentSnapshot>(
-        stream: _authService.getUserDataStream(_uid!),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting || _isLoading) {
-            return const Center(child: CircularProgressIndicator(color: Colors.white));
-          }
-          if (snapshot.hasError) {
-            _showSnackBar('Error loading profile: ${snapshot.error}');
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            _showSnackBar('Profile data not found in Firestore.');
-            return const Center(child: Text('Profile data not found.'));
-          }
-
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-          if (!_isEditing) {
-            _fullNameController.text = data['name'] ?? '';
-            _emailController.text = data['email'] ?? '';
-            _roleController.text = data['role'] ?? 'User';
-            _imageUrl = data['imageUrl'] ?? '';
-            final savedPhone = data['phone'] ?? '+1234567890';
-            try {
-              final phoneNumber = PhoneNumber.fromCompleteNumber(completeNumber: savedPhone);
-              _phoneController.text = phoneNumber.number;
-              _currentCountryCode = phoneNumber.countryCode;
-            } catch (e) {
-              _phoneController.text = savedPhone.replaceAll(RegExp(r'^\+\d+'), '');
-              _currentCountryCode = '+1'; // Default to US if parsing fails
-            }
-          }
-
-          return _buildBody();
-        },
-      ),
+          : _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          : _buildBody(),
     );
   }
 
@@ -240,21 +260,9 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         child: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
           title: const Text('Profile', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
           centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout, color: Colors.white),
-              onPressed: () async {
-                await _authService.signOut();
-                Navigator.pop(context); // Redirect to login screen
-              },
-            ),
-          ],
+
         ),
       ),
     );
@@ -267,36 +275,38 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       ),
       child: FadeTransition(
         opacity: _fadeAnimation,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Container(
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, -4))],
                 ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    _buildProfileImage(),
-                    const SizedBox(height: 30),
-                    _buildTextField(_fullNameController, 'Full Name', Icons.person_outline, enabled: _isEditing),
-                    const SizedBox(height: 20),
-                    _buildTextField(_emailController, 'Email', Icons.email, enabled: _isEditing),
-                    const SizedBox(height: 20),
-                    _buildTextField(_roleController, 'Role', Icons.verified_user, enabled: false),
-                    const SizedBox(height: 20),
-                    _buildPhoneField(),
-                    const SizedBox(height: 30),
-                    _buildEditSaveButton(),
-                    const SizedBox(height: 30),
-                  ],
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildProfileImage(),
+                      const SizedBox(height: 30),
+                      _buildTextField(_fullNameController, 'Full Name', Icons.person_outline, enabled: _isEditing),
+                      const SizedBox(height: 20),
+                      _buildTextField(_emailController, 'Email', Icons.email, enabled: _isEditing),
+                      const SizedBox(height: 20),
+                      _buildTextField(_roleController, 'Role', Icons.verified_user, enabled: false),
+                      const SizedBox(height: 20),
+                      _buildPhoneField(),
+                      const SizedBox(height: 30),
+                      _buildButtons(),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -371,7 +381,23 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     );
   }
 
+  // Helper method to get ISO country code from phone country code
+  String _getIsoCountryCode(String phoneCountryCode) {
+    final dialCode = phoneCountryCode.replaceAll('+', ''); // e.g., "92" from "+92"
+    final country = countries.firstWhere(
+          (c) => c.dialCode == dialCode,
+      orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
+    );
+    return country.code; // e.g., "PK" for "+92"
+  }
+
   Widget _buildPhoneField() {
+    String fullPhoneNumber = _phoneCountryCode != null && _phoneNumberPartController.text.isNotEmpty
+        ? '$_phoneCountryCode${_phoneNumberPartController.text}'
+        : 'Not set';
+
+    print('Building phone field: phoneCountryCode=$_phoneCountryCode, phoneNumberPart=${_phoneNumberPartController.text}, fullPhoneNumber=$fullPhoneNumber');
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -381,8 +407,9 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           BoxShadow(color: Colors.white.withOpacity(0.7), offset: const Offset(-2, -2), blurRadius: 5),
         ],
       ),
-      child: IntlPhoneField(
-        controller: _phoneController,
+      child: _isEditing
+          ? IntlPhoneField(
+        controller: _phoneNumberPartController,
         decoration: const InputDecoration(
           labelText: 'Phone Number',
           labelStyle: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
@@ -390,56 +417,102 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           filled: true,
           fillColor: Colors.transparent,
         ),
-        initialCountryCode: _currentCountryCode != null ? _currentCountryCode?.substring(1) : 'US',
-        initialValue: _phoneController.text.isNotEmpty ? _phoneController.text : null,
-        enabled: _isEditing,
+        initialCountryCode: _phoneCountryCode != null
+            ? _getIsoCountryCode(_phoneCountryCode!) // Convert "+92" to "PK"
+            : 'US', // Default to "US" if null
+        enabled: true,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         invalidNumberMessage: 'Invalid phone number',
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
         showCountryFlag: true,
-        showDropdownIcon: _isEditing,
+        showDropdownIcon: true,
         flagsButtonPadding: const EdgeInsets.only(left: 10),
-        onChanged: (phone) {
-          if (_isEditing) {
-            setState(() {
-              _phoneController.text = phone.number;
-              _currentCountryCode = '+${phone.countryCode}';
-            });
-          }
-        },
         onCountryChanged: (country) {
-          if (_isEditing) {
-            setState(() {
-              _currentCountryCode = '+${country.dialCode}';
-            });
-          }
+          setState(() {
+            _phoneCountryCode = '+${country.dialCode}';
+            print('Country changed to: $_phoneCountryCode');
+          });
         },
+        onChanged: (phone) {
+          setState(() {
+            _phoneCountryCode = phone.countryCode; // e.g., "+92"
+            _phoneNumberPartController.text = phone.number; // e.g., "3001234567"
+            print('Phone changed: countryCode=$_phoneCountryCode, number=${_phoneNumberPartController.text}');
+          });
+        },
+        validator: (value) => (value == null || !_isValidPhoneNumberPart(value.number))
+            ? 'Invalid phone number (9-12 digits, no leading 0)'
+            : null,
+      )
+          : TextField(
+        controller: TextEditingController(text: fullPhoneNumber),
+        enabled: false,
+        decoration: InputDecoration(
+          labelText: 'Phone Number',
+          labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+          prefixIcon: const Icon(Icons.phone, color: Colors.blueAccent),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+          filled: true,
+          fillColor: Colors.transparent,
+        ),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
       ),
     );
   }
 
-  Widget _buildEditSaveButton() {
-    return GestureDetector(
-      onTap: _isLoading ? null : (_isEditing ? _saveProfile : () => setState(() => _isEditing = true)),
-      child: Container(
-        width: 200,
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [_isEditing ? Colors.green : Colors.blue, _isEditing ? Colors.green.shade700 : Colors.blue.shade700],
+  Widget _buildButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (_isEditing)
+          GestureDetector(
+            onTap: _isLoading
+                ? null
+                : () => setState(() {
+              _isEditing = false;
+              _profileImage = null;
+              _listenToProfileData();
+            }),
+            child: Container(
+              width: 120,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.grey, Colors.grey.shade700]),
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), offset: const Offset(0, 4), blurRadius: 8)],
+              ),
+              child: const Center(
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+                ),
+              ),
+            ),
           ),
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), offset: const Offset(0, 4), blurRadius: 8)],
-        ),
-        child: Center(
-          child: _isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
-              : Text(
-            _isEditing ? 'Save' : 'Edit Profile',
-            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+        if (_isEditing) const SizedBox(width: 20),
+        GestureDetector(
+          onTap: _isLoading ? null : (_isEditing ? _saveProfile : () => setState(() => _isEditing = true)),
+          child: Container(
+            width: 120,
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [_isEditing ? Colors.green : Colors.blue, _isEditing ? Colors.green.shade700 : Colors.blue.shade700],
+              ),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), offset: const Offset(0, 4), blurRadius: 8)],
+            ),
+            child: Center(
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : Text(
+                _isEditing ? 'Save' : 'Edit',
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
