@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../dashboard/community_support_view/community_support_view.dart';
 import '../dashboard/other_dashboard/blog/blog_view.dart';
+import '../dashboard/other_dashboard/group_chat_screen.dart';
 import '../dashboard/other_dashboard/home_view.dart';
 import '../dashboard/other_dashboard/nearby dermatologist/nearby_dermatologists_view.dart';
 
@@ -58,7 +58,7 @@ class _CarouselState extends State<Carousel> {
       case 2:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const CommunitySupportView()),
+          MaterialPageRoute(builder: (context) => const GroupChatScreen(groupId: '',)),
         );
         break;
       case 3:

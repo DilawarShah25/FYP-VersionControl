@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../views/authentication/login_view.dart';
 import '../views/dashboard/other_dashboard/blog/blog_view.dart';
-import '../views/dashboard/community_support_view/community_support_view.dart';
 import '../views/dashboard/other_dashboard/faq/faq_view.dart';
-import '../views/dashboard/other_dashboard/profile_view.dart';
+import '../views/dashboard/other_dashboard/group_chat_screen.dart';
 import '../views/dashboard/other_dashboard/home_view.dart';
+import '../views/dashboard/other_dashboard/profile_view.dart';
 
 class ScreensManager extends StatefulWidget {
   const ScreensManager({Key? key}) : super(key: key);
@@ -19,7 +19,7 @@ class _ScreensManagerState extends State<ScreensManager> {
   final List<Widget> _pages = [
     const HomeView(),
     const ProfileView(),
-    const CommunitySupportView(),
+    const GroupChatScreen(groupId: 'group1'), // Replaced CommunitySupportView
   ];
 
   void _onItemTapped(int index) {
@@ -66,7 +66,11 @@ class _ScreensManagerState extends State<ScreensManager> {
       ],
     ).then((value) {
       if (value == 'LOGOUT') {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginView()));
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginView()),
+              (route) => false, // Clear navigation stack
+        );
       } else if (value == 'BLOG') {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const BlogView()));
       } else if (value == 'FAQ') {
@@ -91,11 +95,11 @@ class _ScreensManagerState extends State<ScreensManager> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Keep this as the base color
+      backgroundColor: Colors.white, // Base color
       appBar: _selectedIndex == 0
           ? null
           : PreferredSize(
-        preferredSize: const Size.fromHeight(0.0),
+        preferredSize: const Size.fromHeight(0.0), // Minimal AppBar height
         child: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -113,7 +117,6 @@ class _ScreensManagerState extends State<ScreensManager> {
         ),
       ),
       body: Container(
-        // Add this Container to control the background
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -171,10 +174,10 @@ class _ScreensManagerState extends State<ScreensManager> {
             ),
             BottomNavigationBarItem(
               icon: Icon(
-                Icons.groups,
+                Icons.chat, // Updated to reflect group chat
                 size: _selectedIndex == 2 ? 30 : 25,
               ),
-              label: 'Community',
+              label: 'Chat', // Updated label
             ),
             BottomNavigationBarItem(
               icon: Icon(
