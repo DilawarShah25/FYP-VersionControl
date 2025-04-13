@@ -1,14 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
+
+import '../utils/image_utils.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // Register user with email and password, returns error, imageUrl, and uid
   Future<Map<String, dynamic>> registerWithEmailAndPassword({
     required String name,
     required String email,
@@ -19,6 +18,7 @@ class AuthService {
     File? profileImage,
   }) async {
     try {
+      print('Starting registration for: $email');
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
@@ -26,23 +26,23 @@ class AuthService {
 
       User? user = userCredential.user;
       if (user == null) {
-        return {'error': 'User creation failed: No user returned', 'imageUrl': '', 'uid': null};
+        print('❌ User creation failed: No user returned');
+        return {'error': 'User creation failed', 'image_base64': '', 'uid': null};
       }
 
+      print('User created: ${user.uid}. Sending verification email...');
       await user.sendEmailVerification();
 
       String uid = user.uid;
-      String imageUrl = '';
+      String imageBase64 = '';
 
       if (profileImage != null) {
-        try {
-          Reference storageRef = _storage.ref().child('profile_images/$uid.jpg');
-          UploadTask uploadTask = storageRef.putFile(profileImage, SettableMetadata(contentType: "image/jpeg"));
-          TaskSnapshot snapshot = await uploadTask;
-          imageUrl = await snapshot.ref.getDownloadURL();
-        } catch (e) {
+        print('Converting profile image to base64 for: $uid');
+        imageBase64 = await ImageUtils.convertImageToBase64(profileImage) ?? '';
+        if (imageBase64.isEmpty) {
+          print('❌ Image conversion failed');
           await user.delete();
-          return {'error': 'Image upload failed: ${e.toString()}', 'imageUrl': '', 'uid': null};
+          return {'error': 'Image conversion failed', 'image_base64': '', 'uid': null};
         }
       }
 
@@ -52,170 +52,210 @@ class AuthService {
         'role': role,
         'phoneCountryCode': phoneCountryCode,
         'phoneNumberPart': phoneNumberPart,
-        'imageUrl': imageUrl,
+        'image_base64': imageBase64,
         'uid': uid,
         'createdAt': FieldValue.serverTimestamp(),
         'isEmailVerified': false,
         'lastLogin': FieldValue.serverTimestamp(),
+        'lastVerificationSent': FieldValue.serverTimestamp(),
       };
 
+      print('Saving user data to Firestore: $uid');
       await _firestore.collection('users').doc(uid).set(userData);
-
-      print('User data saved to Firestore: $userData');
-      return {'error': null, 'imageUrl': imageUrl, 'uid': uid};
+      print('✅ Registration successful for: $email');
+      return {'error': null, 'image_base64': imageBase64, 'uid': uid};
     } on FirebaseAuthException catch (e) {
       String errorMessage;
       switch (e.code) {
         case 'email-already-in-use':
-          errorMessage = 'The email address is already in use by another account.';
+          errorMessage = 'This email is already registered.';
           break;
         case 'invalid-email':
-          errorMessage = 'The email address is not valid.';
+          errorMessage = 'Invalid email format.';
           break;
         case 'weak-password':
-          errorMessage = 'The password is too weak.';
+          errorMessage = 'Password is too weak.';
           break;
         default:
           errorMessage = 'Registration failed: ${e.message}';
       }
-      return {'error': errorMessage, 'imageUrl': '', 'uid': null};
+      print('❌ Registration error: $errorMessage');
+      return {'error': errorMessage, 'image_base64': '', 'uid': null};
     } catch (e) {
-      return {'error': 'Unexpected error during registration: ${e.toString()}', 'imageUrl': '', 'uid': null};
+      print('❌ Unexpected registration error: $e');
+      return {'error': 'Unexpected error: $e', 'image_base64': '', 'uid': null};
     }
   }
 
-  // Sign out user
+  Future<Map<String, dynamic>> signInWithEmailAndPassword(String email, String password) async {
+    try {
+      print('Attempting login for: $email');
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+
+      User? user = userCredential.user;
+      if (user == null) {
+        print('❌ Login failed: No user returned');
+        return {'error': 'Login failed', 'user': null};
+      }
+
+      if (!user.emailVerified) {
+        print('❌ Email not verified for: $email');
+        await _auth.signOut();
+        return {'error': 'Please verify your email first.', 'user': null};
+      }
+
+      print('Updating last login for: $email');
+      await _firestore.collection('users').doc(user.uid).update({
+        'lastLogin': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Login successful for: $email');
+      return {'error': null, 'user': user};
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No account found with this email.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email format.';
+          break;
+        default:
+          errorMessage = 'Login failed: ${e.message}';
+      }
+      print('❌ Login error: $errorMessage');
+      return {'error': errorMessage, 'user': null};
+    } catch (e) {
+      print('❌ Unexpected login error: $e');
+      return {'error': 'Unexpected error: $e', 'user': null};
+    }
+  }
+
   Future<void> signOut() async {
     try {
+      print('Signing out user');
       await _auth.signOut();
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Sign out failed: ${e.message}');
+      print('✅ Sign out successful');
     } catch (e) {
-      throw Exception('Unexpected error during sign out: ${e.toString()}');
+      print('❌ Sign out error: $e');
+      throw Exception('Sign out failed: $e');
     }
   }
 
-  // Get current user
   User? getCurrentUser() {
-    return _auth.currentUser;
+    final user = _auth.currentUser;
+    print('Current user: ${user?.email ?? "None"}');
+    return user;
   }
 
-  // Stream of authentication state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Check email verification status and update Firestore
   Future<bool> isEmailVerified() async {
     try {
       User? user = _auth.currentUser;
-      if (user == null) return false;
+      if (user == null) {
+        print('❌ No user signed in');
+        return false;
+      }
 
       await user.reload();
       user = _auth.currentUser;
 
       if (user != null && user.emailVerified) {
+        print('✅ Email verified for: ${user.email}');
         await _firestore.collection('users').doc(user.uid).update({
           'isEmailVerified': true,
           'emailVerifiedAt': FieldValue.serverTimestamp(),
         });
         return true;
       }
+      print('Email not verified for: ${user?.email}');
       return false;
     } catch (e) {
-      print('Error checking/updating email verification status: $e');
+      print('❌ Error checking email verification: $e');
       return false;
     }
   }
 
-  // Resend email verification
   Future<String?> resendVerificationEmail() async {
     try {
       User? user = _auth.currentUser;
-      if (user == null) return 'No user is currently signed in.';
-      if (user.emailVerified) return 'Email is already verified.';
-
-      final lastSent = (await _firestore.collection('users').doc(user.uid).get())['lastVerificationSent'] as Timestamp?;
-      if (lastSent != null && DateTime.now().difference(lastSent.toDate()).inMinutes < 1) {
-        return 'Please wait before requesting another verification email.';
+      if (user == null) {
+        print('❌ No user signed in');
+        return 'No user signed in.';
+      }
+      if (user.emailVerified) {
+        print('✅ Email already verified for: ${user.email}');
+        return 'Email already verified.';
       }
 
+      DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        print('❌ User data not found in Firestore');
+        return 'User data not found.';
+      }
+
+      final lastSent = (doc.data() as Map<String, dynamic>)['lastVerificationSent'] as Timestamp?;
+      if (lastSent != null && DateTime.now().difference(lastSent.toDate()).inSeconds < 30) {
+        print('⏳ Rate limit: Wait before resending verification email');
+        return 'Please wait 30 seconds before resending.';
+      }
+
+      print('Resending verification email to: ${user.email}');
       await user.sendEmailVerification();
       await _firestore.collection('users').doc(user.uid).update({
         'lastVerificationSent': FieldValue.serverTimestamp(),
       });
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return 'Error resending verification email: ${e.message}';
-    } catch (e) {
-      return 'Unexpected error: ${e.toString()}';
-    }
-  }
-
-  // Update user profile in Firestore
-  Future<String?> updateUserProfile({
-    required String uid,
-    String? name,
-    String? phoneCountryCode,
-    String? phoneNumberPart,
-    File? profileImage,
-  }) async {
-    try {
-      Map<String, dynamic> updates = {};
-      if (name != null) updates['name'] = name.trim();
-      if (phoneCountryCode != null) updates['phoneCountryCode'] = phoneCountryCode;
-      if (phoneNumberPart != null) updates['phoneNumberPart'] = phoneNumberPart;
-
-      if (profileImage != null) {
-        Reference storageRef = _storage.ref().child('profile_images/$uid.jpg');
-        await storageRef.putFile(profileImage, SettableMetadata(contentType: "image/jpeg"));
-        String imageUrl = await storageRef.getDownloadURL();
-        updates['imageUrl'] = imageUrl;
-      }
-
-      if (updates.isNotEmpty) {
-        await _firestore.collection('users').doc(uid).update(updates);
-      }
+      print('✅ Verification email resent');
       return null;
     } catch (e) {
-      return 'Error updating profile: ${e.toString()}';
+      print('❌ Error resending verification email: $e');
+      return 'Error resending email: $e';
     }
   }
 
-  // Update user data in Firestore (generic update)
-  Future<String?> updateUserData(String uid, Map<String, dynamic> updatedData) async {
+  Future<String?> resetPassword(String email) async {
     try {
-      User? currentUser = _auth.currentUser;
-      if (currentUser == null || currentUser.uid != uid) {
-        return 'Unauthorized: No user signed in or UID mismatch';
-      }
-
-      Map<String, dynamic> sanitizedData = {};
-      updatedData.forEach((key, value) {
-        if (value != null) sanitizedData[key] = (value is String) ? value.trim() : value;
-      });
-
-      if (sanitizedData.isNotEmpty) {
-        await _firestore.collection('users').doc(uid).update(sanitizedData);
-        return null;
-      }
-      return 'No valid data provided to update';
+      print('Sending password reset email to: $email');
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      print('✅ Password reset email sent');
+      return null;
     } catch (e) {
-      return 'Error updating user data: ${e.toString()}';
+      print('❌ Error sending password reset email: $e');
+      return 'Error sending password reset email: $e';
     }
   }
 
-  // Get user data from Firestore
   Future<Map<String, dynamic>> getUserData(String uid) async {
     try {
       DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
-      if (doc.exists) return doc.data() as Map<String, dynamic>;
+      if (doc.exists) {
+        print('✅ User data fetched for: $uid');
+        return doc.data() as Map<String, dynamic>;
+      }
+      print('❌ User data not found for: $uid');
       return {'error': 'User data not found'};
     } catch (e) {
-      return {'error': 'Error fetching user data: ${e.toString()}'};
+      print('❌ Error fetching user data: $e');
+      return {'error': 'Error fetching user data: $e'};
     }
   }
 
-  // Stream of user data from Firestore
-  Stream<DocumentSnapshot> getUserDataStream(String uid) {
-    return _firestore.collection('users').doc(uid).snapshots();
+  Future<String?> updateUserData(String uid, Map<String, dynamic> data) async {
+    try {
+      print('Updating user data for: $uid');
+      await _firestore.collection('users').doc(uid).update(data);
+      print('✅ User data updated successfully');
+      return null;
+    } catch (e) {
+      print('❌ Error updating user data: $e');
+      return 'Error updating user data: $e';
+    }
   }
 }

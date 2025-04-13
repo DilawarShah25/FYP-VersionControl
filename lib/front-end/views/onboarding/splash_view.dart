@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../app_theme.dart';
+import '../../utils/app_theme.dart';
 import '../authentication/login_view.dart';
 
 class SplashView extends StatefulWidget {

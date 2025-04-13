@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../app_theme.dart';
+import '../../../utils/app_theme.dart';
 import '../../detection/detection_results_view.dart';
 import '../../detection/upload_history.dart';
 import '../../progress/progress_details_view.dart';

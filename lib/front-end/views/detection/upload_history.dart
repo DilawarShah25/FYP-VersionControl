@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../app_theme.dart';
+import '../../utils/app_theme.dart';
 
 class UploadHistory extends StatelessWidget {
   final int totalUploads;

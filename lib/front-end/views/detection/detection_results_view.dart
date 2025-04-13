@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import '../../utils/circular_graph_painter.dart';
-import '../app_theme.dart';
+import '../../utils/app_theme.dart';
 
 class DetectionResultView extends StatefulWidget {
   final String title;

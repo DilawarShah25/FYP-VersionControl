@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../app_theme.dart';
+import '../../utils/app_theme.dart';
 
 class RecommendationsView extends StatelessWidget {
   const RecommendationsView({super.key});

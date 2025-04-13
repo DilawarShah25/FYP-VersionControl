@@ -1,13 +1,15 @@
-import 'dart:async'; // For StreamSubscription
-import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart'; // For DocumentSnapshot
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
-import 'package:intl_phone_field/countries.dart'; // Import for country list
+import 'package:intl_phone_field/countries.dart';
 import '../../../services/auth_service.dart';
+import '../../../utils/app_theme.dart';
+import '../../../utils/image_utils.dart';
+import 'dart:io';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -26,29 +28,26 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
   File? _profileImage;
   bool _isEditing = false;
   bool _isLoading = false;
-  String? _phoneCountryCode; // e.g., "+92"
-  String? _imageUrl;
+  String? _phoneCountryCode;
+  String? _imageBase64;
   String? _uid;
   StreamSubscription<DocumentSnapshot>? _profileListener;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-
-  // Define custom theme colors
-  static const Color primaryColor = Color(0xFF004e92); // Deep blue
-  static const Color secondaryColor = Color(0xFF000428); // Darker blue
-  static const Color accentColor = Color(0xFF00C4B4); // Teal accent
-  static const Color backgroundColor = Color(0xFFF5F7FA); // Light gray background
-  static const Color textColor = Color(0xFF2D3748); // Dark gray text
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
     );
     _fadeAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+    );
     _animationController.forward();
     _initializeUser();
   }
@@ -63,33 +62,32 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         return;
       }
       _uid = user.uid;
-      print('Initializing user with UID: $_uid');
       _listenToProfileData();
     } catch (e) {
       _showSnackBar('Error initializing user: $e');
+      debugPrint('Initialize error: $e');
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
   void _listenToProfileData() {
-    _profileListener?.cancel(); // Cancel any existing subscription
+    _profileListener?.cancel();
     _profileListener = FirebaseFirestore.instance
         .collection('users')
         .doc(_uid)
         .snapshots()
-        .listen((snapshot) {
+        .listen((snapshot) async {
       if (snapshot.exists) {
         final userData = snapshot.data() as Map<String, dynamic>;
-        print('Profile data from Firebase: $userData');
         _updateProfileUI(userData);
       } else {
-        _showSnackBar('User data not found in Firebase.');
-        print('No data exists for UID: $_uid');
+        _showSnackBar('User data not found.');
+        debugPrint('No Firestore data for user: $_uid');
       }
     }, onError: (e) {
-      _showSnackBar('Error listening to profile data: $e');
-      print('Error in profile listener: $e');
+      _showSnackBar('Error fetching profile: $e');
+      debugPrint('Firestore listen error: $e');
     });
   }
 
@@ -99,19 +97,23 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         _fullNameController.text = userData['name'] ?? '';
         _emailController.text = userData['email'] ?? '';
         _roleController.text = userData['role'] ?? 'User';
-        _imageUrl = userData['imageUrl'] ?? '';
-        _phoneCountryCode = userData['phoneCountryCode']?.toString() ?? '+1'; // Default to "+1" if null
+        _imageBase64 = userData['image_base64'] is String && userData['image_base64'].isNotEmpty
+            ? userData['image_base64']
+            : null;
+        _phoneCountryCode = userData['phoneCountryCode']?.toString() ?? '+1';
         _phoneNumberPartController.text = userData['phoneNumberPart'] ?? '';
-        print('Updated UI: phoneCountryCode=$_phoneCountryCode, phoneNumberPart=${_phoneNumberPartController.text}');
       });
+      debugPrint('Updated UI with Firestore data');
     }
   }
 
-  bool _isValidPhoneNumberPart(String numberPart) => numberPart.length >= 9 && numberPart.length <= 12 && !numberPart.startsWith('0');
+  bool _isValidPhoneNumberPart(String numberPart) =>
+      numberPart.length >= 6 && numberPart.length <= 12 && !numberPart.startsWith('0');
 
   Future<void> _saveProfile() async {
     if (_uid == null) {
-      _showSnackBar('No user ID available. Please log in again.');
+      _showSnackBar('No user ID. Please log in again.');
+      debugPrint('No UID for save');
       return;
     }
 
@@ -129,17 +131,29 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       return;
     }
     if (!_isValidPhoneNumberPart(phoneNumberPart)) {
-      _showSnackBar('Phone number must be 9-12 digits and not start with 0');
+      _showSnackBar('Phone number must be 6-12 digits, no leading 0');
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      String? newImageUrl = _imageUrl;
+      String? newImageBase64 = _imageBase64;
+
       if (_profileImage != null) {
-        final ref = FirebaseStorage.instance.ref().child('profile_images/$_uid.jpg');
-        await ref.putFile(_profileImage!, SettableMetadata(contentType: 'image/jpeg'));
-        newImageUrl = await ref.getDownloadURL();
+        if (!await _profileImage!.exists()) {
+          _showSnackBar('Selected image is invalid.');
+          setState(() => _profileImage = null);
+          debugPrint('Invalid profile image');
+          return;
+        }
+
+        newImageBase64 = await ImageUtils.convertImageToBase64(_profileImage!);
+        if (newImageBase64 == null) {
+          _showSnackBar('Failed to process image.');
+          debugPrint('Image conversion failed');
+          return;
+        }
+        debugPrint('Converted image to base64 (length: ${newImageBase64.length})');
       }
 
       final updatedData = {
@@ -147,22 +161,31 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         'email': _emailController.text.trim(),
         'phoneCountryCode': _phoneCountryCode!,
         'phoneNumberPart': phoneNumberPart,
-        if (newImageUrl != null && newImageUrl.isNotEmpty) 'imageUrl': newImageUrl,
+        'role': _roleController.text.trim(),
+        'image_base64': newImageBase64 ?? '',
       };
 
       String? error = await _authService.updateUserData(_uid!, updatedData);
       if (error != null) {
         _showSnackBar(error);
+        debugPrint('Firestore update failed: $error');
       } else {
         setState(() {
           _isEditing = false;
-          _imageUrl = newImageUrl;
+          _imageBase64 = newImageBase64;
           _profileImage = null;
         });
+        ImageProvider? provider = _buildImageProvider();
+        if (provider != null && provider is MemoryImage) {
+          // Clear image cache to ensure new image displays
+          imageCache.evict(provider);
+        }
         _showSuccessDialog();
+        debugPrint('Profile updated successfully');
       }
     } catch (e) {
       _showSnackBar('Error saving profile: $e');
+      debugPrint('Save error: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -171,34 +194,49 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
   Future<void> _pickImage() async {
     if (!_isEditing) return;
 
-    final ImageSource? source = await showDialog<ImageSource>(
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Choose Image Source', style: TextStyle(color: textColor)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        backgroundColor: backgroundColor,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, ImageSource.camera),
-            child: const Text('Camera', style: TextStyle(color: accentColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, ImageSource.gallery),
-            child: const Text('Gallery', style: TextStyle(color: accentColor)),
-          ),
-        ],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(AppTheme.paddingMedium),
+        decoration: BoxDecoration(
+          color: AppTheme.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Choose Image Source',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.primaryColor),
+              title: const Text('Camera'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.primaryColor),
+              title: const Text('Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
       ),
     );
 
     if (source != null) {
       try {
-        final picker = ImagePicker();
-        final pickedFile = await picker.pickImage(source: source, maxHeight: 800, maxWidth: 800);
-        if (pickedFile != null) {
-          setState(() => _profileImage = File(pickedFile.path));
+        final imageFile = await ImageUtils.pickImage(source);
+        if (imageFile != null) {
+          setState(() => _profileImage = imageFile);
+          debugPrint('Picked image: ${imageFile.path}');
         }
       } catch (e) {
         _showSnackBar('Error picking image: $e');
+        debugPrint('Image pick error: $e');
       }
     }
   }
@@ -207,8 +245,10 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message, style: const TextStyle(color: Colors.white)),
-          backgroundColor: Colors.redAccent,
+          content: Text(message, style: const TextStyle(color: AppTheme.white)),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -219,22 +259,67 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          backgroundColor: backgroundColor,
-          title: const Text('Success', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 20)),
-          content: const Row(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: AppTheme.white,
+          title: Text(
+            'Success',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.secondaryColor),
+          ),
+          content: Row(
             children: [
-              Icon(Icons.check_circle, color: accentColor, size: 30),
-              SizedBox(width: 10),
-              Expanded(child: Text('Profile updated successfully!', style: TextStyle(fontSize: 16, color: textColor))),
+              Icon(Icons.check_circle, color: AppTheme.secondaryColor, size: 30),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Profile updated successfully!',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+              child: Text(
+                'OK',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
+        ),
+      );
+    }
+  }
+
+  ImageProvider? _buildImageProvider() {
+    if (_profileImage != null && _profileImage!.existsSync()) {
+      return FileImage(_profileImage!);
+    }
+    if (_imageBase64 != null && _imageBase64!.isNotEmpty) {
+      try {
+        return MemoryImage(base64Decode(_imageBase64!));
+      } catch (e) {
+        debugPrint('Error decoding base64: $e');
+        return null;
+      }
+    }
+    return const AssetImage('assets/placeholder.png');
+  }
+
+  void _zoomImage() {
+    final provider = _buildImageProvider();
+    if (provider != null) {
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image(image: provider, fit: BoxFit.contain),
+          ),
         ),
       );
     }
@@ -254,91 +339,46 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: ThemeData(
-        primaryColor: primaryColor,
-        scaffoldBackgroundColor: backgroundColor,
-        textTheme: const TextTheme(
-          headlineMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-          bodyMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor),
-          labelMedium: TextStyle(fontSize: 16, color: primaryColor, fontWeight: FontWeight.bold),
-        ),
-      ),
+      data: AppTheme.theme,
       child: Scaffold(
-        appBar: _buildAppBar(),
-        body: _uid == null
-            ? const Center(child: CircularProgressIndicator(color: accentColor))
-            : _isLoading
-            ? const Center(child: CircularProgressIndicator(color: accentColor))
+        body: _uid == null || _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor))
             : _buildBody(),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(60.0),
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(colors: [primaryColor, secondaryColor]),
-        ),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: const Text('Profile', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
-          centerTitle: true,
-          automaticallyImplyLeading: false, // This removes the back button
-        ),
-      ),
+  Widget _buildBody() {
+    return CustomScrollView(
+      slivers: [
+        _buildAppBar(),
+        SliverToBoxAdapter(child: _buildContent()),
+      ],
     );
   }
 
-  Widget _buildBody() {
-    return Container(
-      // Gradient Background for the body
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF004e92),
-            Color(0xFF000428),
-          ],
-          // begin: Alignment.topLeft,
-          // end: Alignment.bottomRight,
+  Widget _buildAppBar() {
+    return SliverAppBar(
+      backgroundColor: AppTheme.primaryColor,
+      foregroundColor: AppTheme.white,
+      expandedHeight: 200,
+      pinned: true,
+      flexibleSpace: FlexibleSpaceBar(
+        title: Text(
+          _fullNameController.text.isEmpty ? 'Your Profile' : _fullNameController.text,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.white),
         ),
-      ),
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, -6))],
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildProfileImage(),
-                      const SizedBox(height: 32),
-                      _buildTextField(_fullNameController, 'Full Name', Icons.person_outline, enabled: _isEditing),
-                      const SizedBox(height: 20),
-                      _buildTextField(_emailController, 'Email', Icons.email, enabled: _isEditing),
-                      const SizedBox(height: 20),
-                      _buildTextField(_roleController, 'Role', Icons.verified_user, enabled: false),
-                      const SizedBox(height: 20),
-                      _buildPhoneField(),
-                      const SizedBox(height: 32),
-                      _buildButtons(),
-                      const SizedBox(height: 32),
-                    ],
-                  ),
-                ),
-              ),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
+          ),
+          child: Center(
+            child: _buildProfileImage(),
+          ),
         ),
       ),
     );
@@ -346,83 +386,127 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
   Widget _buildProfileImage() {
     return GestureDetector(
-      onTap: _pickImage,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 160,
-            height: 160,
+      onTap: _isEditing ? _pickImage : _zoomImage,
+      child: Hero(
+        tag: 'profile_image_$_uid',
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [primaryColor.withOpacity(0.8), accentColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: CircleAvatar(
-              radius: 80,
-              backgroundImage: _profileImage != null
-                  ? FileImage(_profileImage!)
-                  : (_imageUrl != null && _imageUrl!.isNotEmpty
-                  ? NetworkImage(_imageUrl!)
-                  : const NetworkImage('https://via.placeholder.com/150')) as ImageProvider,
-              backgroundColor: Colors.transparent,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: AppTheme.accentColor,
+                  backgroundImage: _buildImageProvider(),
+                  onBackgroundImageError: (_, __) {
+                    debugPrint('Image load error');
+                    setState(() => _imageBase64 = null);
+                  },
+                ),
+                if (_isEditing)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: AppTheme.secondaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: AppTheme.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (_isEditing)
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 6)],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.paddingMedium),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.paddingLarge),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Profile Details',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.primaryColor),
                 ),
-                child: const Icon(Icons.camera_alt, color: primaryColor, size: 28),
-              ),
+                const SizedBox(height: AppTheme.paddingMedium),
+                _buildTextField(_fullNameController, 'Full Name', Icons.person_outline, enabled: _isEditing),
+                const SizedBox(height: AppTheme.paddingMedium),
+                _buildTextField(_emailController, 'Email', Icons.email, enabled: _isEditing),
+                const SizedBox(height: AppTheme.paddingMedium),
+                _buildTextField(_roleController, 'Role', Icons.verified_user, enabled: false),
+                const SizedBox(height: AppTheme.paddingMedium),
+                _buildPhoneField(),
+                const SizedBox(height: AppTheme.paddingLarge),
+                _buildButtons(),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildTextField(TextEditingController controller, String label, IconData icon, {required bool enabled}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, 2), blurRadius: 6),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        enabled: enabled,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
-          prefixIcon: Icon(icon, color: primaryColor),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+    return TextFormField(
+      controller: controller,
+      enabled: enabled,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: AppTheme.primaryColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor),
+        filled: true,
+        fillColor: AppTheme.accentColor.withOpacity(0.3),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.accentColor),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppTheme.accentColor.withOpacity(0.5)),
+        ),
       ),
+      style: Theme.of(context).textTheme.bodyMedium,
     );
   }
 
   String _getIsoCountryCode(String phoneCountryCode) {
-    final dialCode = phoneCountryCode.replaceAll('+', ''); // e.g., "92" from "+92"
+    final dialCode = phoneCountryCode.replaceAll('+', '');
     final country = countries.firstWhere(
           (c) => c.dialCode == dialCode,
-      orElse: () => countries.firstWhere((c) => c.code == 'US'), // Default to US if not found
+      orElse: () => countries.firstWhere((c) => c.code == 'US'),
     );
-    return country.code; // e.g., "PK" for "+92"
+    return country.code;
   }
 
   Widget _buildPhoneField() {
@@ -430,66 +514,53 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         ? '$_phoneCountryCode${_phoneNumberPartController.text}'
         : 'Not set';
 
-    print('Building phone field: phoneCountryCode=$_phoneCountryCode, phoneNumberPart=${_phoneNumberPartController.text}, fullPhoneNumber=$fullPhoneNumber');
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, 2), blurRadius: 6),
-        ],
-      ),
-      child: _isEditing
-          ? IntlPhoneField(
-        controller: _phoneNumberPartController,
-        decoration: const InputDecoration(
-          labelText: 'Phone Number',
-          labelStyle: TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
-          border: InputBorder.none,
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+    return _isEditing
+        ? IntlPhoneField(
+      controller: _phoneNumberPartController,
+      decoration: InputDecoration(
+        labelText: 'Phone Number',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
-        initialCountryCode: _phoneCountryCode != null ? _getIsoCountryCode(_phoneCountryCode!) : 'US',
-        enabled: true,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        invalidNumberMessage: 'Invalid phone number',
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor),
-        showCountryFlag: true,
-        showDropdownIcon: true,
-        flagsButtonPadding: const EdgeInsets.only(left: 12),
-        onCountryChanged: (country) {
-          setState(() {
-            _phoneCountryCode = '+${country.dialCode}';
-            print('Country changed to: $_phoneCountryCode');
-          });
-        },
-        onChanged: (phone) {
-          setState(() {
-            _phoneCountryCode = phone.countryCode;
-            _phoneNumberPartController.text = phone.number;
-            print('Phone changed: countryCode=$_phoneCountryCode, number=${_phoneNumberPartController.text}');
-          });
-        },
-        validator: (value) => (value == null || !_isValidPhoneNumberPart(value.number))
-            ? 'Invalid phone number (9-12 digits, no leading 0)'
-            : null,
-      )
-          : TextField(
-        controller: TextEditingController(text: fullPhoneNumber),
-        enabled: false,
-        decoration: InputDecoration(
-          labelText: 'Phone Number',
-          labelStyle: const TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
-          prefixIcon: const Icon(Icons.phone, color: primaryColor),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        filled: true,
+        fillColor: AppTheme.accentColor.withOpacity(0.3),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.accentColor),
         ),
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor),
       ),
+      initialCountryCode: _phoneCountryCode != null ? _getIsoCountryCode(_phoneCountryCode!) : 'US',
+      enabled: true,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      invalidNumberMessage: 'Invalid phone number',
+      onCountryChanged: (country) {
+        setState(() {
+          _phoneCountryCode = '+${country.dialCode}';
+        });
+      },
+      validator: (value) => (value == null || !_isValidPhoneNumberPart(value.number))
+          ? 'Invalid phone number (6-12 digits, no leading 0)'
+          : null,
+    )
+        : TextField(
+      controller: TextEditingController(text: fullPhoneNumber),
+      enabled: false,
+      decoration: InputDecoration(
+        labelText: 'Phone Number',
+        prefixIcon: const Icon(Icons.phone, color: AppTheme.primaryColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        filled: true,
+        fillColor: AppTheme.accentColor.withOpacity(0.3),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppTheme.accentColor.withOpacity(0.5)),
+        ),
+      ),
+      style: Theme.of(context).textTheme.bodyMedium,
     );
   }
 
@@ -498,51 +569,35 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (_isEditing)
-          GestureDetector(
-            onTap: _isLoading
-                ? null
-                : () => setState(() {
-              _isEditing = false;
-              _profileImage = null;
-              _listenToProfileData();
-            }),
-            child: Container(
-              width: 120,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Colors.grey, Colors.grey]),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), offset: const Offset(0, 4), blurRadius: 8)],
+          ScaleTransition(
+            scale: _scaleAnimation,
+            child: OutlinedButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                setState(() {
+                  _isEditing = false;
+                  _profileImage = null;
+                });
+                _listenToProfileData();
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+                side: const BorderSide(color: AppTheme.primaryColor),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Center(
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-              ),
+              child: const Text('Cancel'),
             ),
           ),
-        if (_isEditing) const SizedBox(width: 16),
-        GestureDetector(
-          onTap: _isLoading ? null : (_isEditing ? _saveProfile : () => setState(() => _isEditing = true)),
-          child: Container(
-            width: 120,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [_isEditing ? accentColor : primaryColor, _isEditing ? accentColor.withOpacity(0.8) : primaryColor.withOpacity(0.8)],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), offset: const Offset(0, 4), blurRadius: 8)],
-            ),
-            child: Center(
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text(
-                _isEditing ? 'Save' : 'Edit',
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-            ),
+        if (_isEditing) const SizedBox(width: AppTheme.paddingMedium),
+        ScaleTransition(
+          scale: _scaleAnimation,
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : (_isEditing ? _saveProfile : () => setState(() => _isEditing = true)),
+            child: _isLoading
+                ? const CircularProgressIndicator(color: AppTheme.white)
+                : Text(_isEditing ? 'Save' : 'Edit'),
           ),
         ),
       ],

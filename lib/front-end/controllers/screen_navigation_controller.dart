@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/app_theme.dart';
 import '../views/authentication/login_view.dart';
 import '../views/dashboard/other_dashboard/blog/blog_view.dart';
 import '../views/dashboard/other_dashboard/faq/faq_view.dart';
@@ -107,8 +108,8 @@ class _ScreensManagerState extends State<ScreensManager> {
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF004e92),
-                  Color(0xFF000428),
+                  AppTheme.primaryColor,
+                  AppTheme.secondaryColor,
                 ],
               ),
             ),

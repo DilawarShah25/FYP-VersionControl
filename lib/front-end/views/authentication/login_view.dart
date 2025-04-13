@@ -2,246 +2,198 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:scalpsense/front-end/views/authentication/sign_up.dart';
 import '../../controllers/screen_navigation_controller.dart';
+import '../../services/auth_service.dart';
+import '../../utils/app_theme.dart';
 
 class LoginView extends StatefulWidget {
-  const LoginView({Key? key}) : super(key: key);
+  const LoginView({super.key});
 
   @override
   _LoginViewState createState() => _LoginViewState();
 }
 
 class _LoginViewState extends State<LoginView> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  String? errorMessage;
+  final AuthService _authService = AuthService();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  String? _errorMessage;
   bool _showPassword = false;
+  bool _isLoading = false;
 
-  // Function to validate login credentials
-  Future<void> _validateLogin() async {
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+  Future<void> _login() async {
+    if (_isLoading) return;
 
-      // Navigate to the home screen upon successful login
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    print('Initiating login for: $email');
+    final result = await _authService.signInWithEmailAndPassword(email, password);
+
+    setState(() => _isLoading = false);
+
+    if (result['error'] == null) {
+      print('Login successful, navigating to ScreensManager');
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const ScreensManager()),
       );
-    } catch (e) {
+    } else {
       setState(() {
-        errorMessage = "Login failed: ${e.toString()}";
+        _errorMessage = result['error'];
       });
+      print('Login failed: $_errorMessage');
     }
   }
 
-  // Function to reset password
   Future<void> _resetPassword() async {
-    if (emailController.text.isEmpty) {
+    if (_isLoading || _emailController.text.isEmpty) {
       setState(() {
-        errorMessage = "Please enter your email first.";
+        _errorMessage = 'Please enter your email first.';
       });
       return;
     }
 
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text.trim());
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final email = _emailController.text.trim();
+    final result = await _authService.resetPassword(email);
+
+    setState(() => _isLoading = false);
+
+    if (result == null) {
       setState(() {
-        errorMessage = "Password reset link sent! Check your email.";
+        _errorMessage = 'Password reset link sent! Check your email.';
       });
-    } catch (e) {
+    } else {
       setState(() {
-        errorMessage = "Error: ${e.toString()}";
+        _errorMessage = result;
       });
+      print('Password reset failed: $_errorMessage');
     }
   }
 
   @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
+    return Theme(
+      data: AppTheme.theme,
+      child: Scaffold(
+        body: SafeArea(
           child: SingleChildScrollView(
             child: Column(
               children: [
-                Container(
-                  height: 300,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFA5FECB), Color(0xFF20BDFF), Color(0xFF5433FF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(100),
-                      bottomRight: Radius.circular(100),
-                    ),
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '  Welcome Back  ',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.blueAccent,
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        "LOGIN",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(30.0),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          labelStyle: const TextStyle(color: Colors.white),
-                          prefixIcon: const Icon(Icons.email, color: Colors.white),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Colors.white),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Colors.white),
-                          ),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                        cursorColor: Colors.white,
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: !_showPassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          labelStyle: const TextStyle(color: Colors.white),
-                          prefixIcon: const Icon(Icons.lock, color: Colors.white),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _showPassword ? Icons.visibility : Icons.visibility_off,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _showPassword = !_showPassword;
-                              });
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Colors.white),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Colors.white),
-                          ),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                        cursorColor: Colors.white,
-                      ),
-                      const SizedBox(height: 20),
-                      if (errorMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          child: Text(
-                            errorMessage!,
-                            style: const TextStyle(color: Colors.red, fontSize: 14),
-                          ),
-                        ),
-                      ElevatedButton(
-                        onPressed: _validateLogin,
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.blueAccent, backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextButton(
-                        onPressed: _resetPassword,
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            "Create a new account",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => SignUpView()),
-                              );
-                            },
-                            child: const Text(
-                              "Sign Up",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.none,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                _buildHeader(),
+                _buildForm(),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.paddingLarge),
+      color: AppTheme.primaryColor,
+      child: Column(
+        children: [
+          const CircleAvatar(
+            radius: 40,
+            backgroundColor: AppTheme.white,
+            child: Icon(Icons.person, size: 40, color: AppTheme.primaryColor),
+          ),
+          const SizedBox(height: AppTheme.paddingMedium),
+          Text(
+            'Welcome Back',
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: AppTheme.white),
+          ),
+          const SizedBox(height: AppTheme.paddingSmall),
+          Text(
+            'Login',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    return Card(
+      margin: const EdgeInsets.all(AppTheme.paddingMedium),
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.paddingLarge),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: _emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.email),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: AppTheme.paddingMedium),
+            TextFormField(
+              controller: _passwordController,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                prefixIcon: const Icon(Icons.lock),
+                suffixIcon: IconButton(
+                  icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () => setState(() => _showPassword = !_showPassword),
+                ),
+              ),
+              obscureText: !_showPassword,
+            ),
+            const SizedBox(height: AppTheme.paddingMedium),
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppTheme.paddingMedium),
+                child: Text(
+                  _errorMessage!,
+                  style: TextStyle(color: AppTheme.errorColor),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ElevatedButton(
+              onPressed: _login,
+              child: const Text('Login'),
+            ),
+            const SizedBox(height: AppTheme.paddingSmall),
+            TextButton(
+              onPressed: _resetPassword,
+              child: const Text('Forgot Password?'),
+            ),
+            const SizedBox(height: AppTheme.paddingMedium),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Create a new account'),
+                TextButton(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignUpView())),
+                  child: const Text('Sign Up'),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

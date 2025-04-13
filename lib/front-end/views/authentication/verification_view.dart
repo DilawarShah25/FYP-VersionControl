@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-import 'login_view.dart'; // Import LoginView
+import '../../utils/app_theme.dart';
+import 'login_view.dart';
 
 class VerificationView extends StatefulWidget {
   final String email;
@@ -19,13 +19,6 @@ class _VerificationViewState extends State<VerificationView> {
   String? _message;
   Timer? _verificationTimer;
 
-  // Theme constants
-  static const Color primaryColor = Color(0xFF1E3C72); // Deep blue
-  static const Color secondaryColor = Color(0xFF2A5298); // Lighter blue
-  static const Color accentColor = Color(0xFF00C4B4); // Teal accent
-  static const Color backgroundColor = Color(0xFFF5F7FA); // Light gray
-  static const Color textColor = Color(0xFF2D3748); // Dark gray
-
   @override
   void initState() {
     super.initState();
@@ -33,111 +26,117 @@ class _VerificationViewState extends State<VerificationView> {
   }
 
   void _startVerificationCheck() {
-    // Periodically check email verification status every 2 seconds
-    _verificationTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+    _verificationTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       if (!mounted) {
         timer.cancel();
         return;
       }
 
-      bool isVerified = await _authService.isEmailVerified();
-      if (isVerified) {
+      try {
+        bool isVerified = await _authService.isEmailVerified();
+        if (isVerified) {
+          timer.cancel();
+          setState(() {
+            _message = 'Email verified successfully!';
+          });
+          Future.delayed(const Duration(seconds: 1), () {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginView()),
+              );
+            }
+          });
+        }
+      } catch (e) {
+        print('❌ Error checking verification: $e');
         setState(() {
-          _message = 'Email verified successfully!';
-        });
-        timer.cancel(); // Stop the timer
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginView()),
-            );
-          }
+          _message = 'Error checking verification.';
         });
       }
     });
   }
 
   Future<void> _resendVerificationEmail() async {
-    setState(() => _isLoading = true);
-    try {
-      User? user = _authService.getCurrentUser();
-      if (user != null && !user.emailVerified) {
-        await user.sendEmailVerification();
-        setState(() {
-          _isLoading = false;
-          _message = 'Verification email resent. Please check your inbox.';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _message = 'Error resending email: $e';
-      });
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+      _message = null;
+    });
+
+    print('Attempting to resend verification email');
+    final result = await _authService.resendVerificationEmail();
+
+    setState(() {
+      _isLoading = false;
+      _message = result ?? 'Verification email resent. Check your inbox and spam folder.';
+    });
+
+    if (result != null) {
+      print('Resend failed: $result');
     }
   }
 
   @override
   void dispose() {
-    _verificationTimer?.cancel(); // Cancel the timer when widget is disposed
+    _verificationTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: ThemeData(
-        primaryColor: primaryColor,
-        scaffoldBackgroundColor: backgroundColor,
-        textTheme: const TextTheme(
-          headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-          bodyMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor),
-          labelMedium: TextStyle(fontSize: 16, color: primaryColor, fontWeight: FontWeight.w600),
-        ),
-      ),
+      data: AppTheme.theme,
       child: Scaffold(
-        appBar: _buildAppBar(),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [primaryColor, secondaryColor],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+        appBar: AppBar(
+          title: const Text('Verify Your Email'),
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: AppTheme.white,
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(AppTheme.paddingLarge),
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.email, size: 80, color: Colors.white),
-                  const SizedBox(height: 20),
-                  Text(
-                    'A verification email has been sent to ${widget.email}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Waiting for verification...',
-                    style: TextStyle(fontSize: 16, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 20),
-                  if (_message != null)
-                    Text(
-                      _message!,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: _message!.contains('successfully') ? accentColor : Colors.yellow,
-                      ),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.paddingLarge),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.email,
+                      size: 60,
+                      color: AppTheme.primaryColor,
                     ),
-                  const SizedBox(height: 20),
-                  _isLoading
-                      ? const CircularProgressIndicator(color: accentColor)
-                      : _buildResendButton(),
-                  const SizedBox(height: 20),
-                ],
+                    const SizedBox(height: AppTheme.paddingMedium),
+                    Text(
+                      'A verification email has been sent to ${widget.email}',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: AppTheme.paddingSmall),
+                    Text(
+                      'Waiting for verification...',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: AppTheme.paddingMedium),
+                    if (_message != null)
+                      Text(
+                        _message!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: _message!.contains('successfully') ? AppTheme.secondaryColor : AppTheme.errorColor,
+                        ),
+                      ),
+                    const SizedBox(height: AppTheme.paddingLarge),
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                      onPressed: _resendVerificationEmail,
+                      child: const Text('Resend Verification Email'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -145,50 +144,4 @@ class _VerificationViewState extends State<VerificationView> {
       ),
     );
   }
-
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(60.0),
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(colors: [primaryColor, secondaryColor]),
-        ),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: const Text(
-            'Verify Your Email',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          centerTitle: true,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResendButton() {
-    return GestureDetector(
-      onTap: _resendVerificationEmail,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [primaryColor.withOpacity(0.8), secondaryColor.withOpacity(0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), offset: const Offset(0, 4), blurRadius: 8)],
-        ),
-        child: const Center(
-          child: Text(
-            'Resend Verification Email',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ),
-      ),
-    );
-  }
-
-
 }
