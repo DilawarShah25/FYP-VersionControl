@@ -27,7 +27,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   void initState() {
     super.initState();
-    final user = _authService.getCurrentUser();
+    final user = _authService.getCurrentUser ();
     if (user == null) {
       Navigator.pop(context);
     } else {
@@ -55,100 +55,107 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [primaryColor, secondaryColor],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+    return Theme(
+      data: ThemeData(
+        primaryColor: primaryColor,
+        scaffoldBackgroundColor: backgroundColor,
+        textTheme: const TextTheme(
+          headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+          bodyMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: textColor),
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                child: StreamBuilder<List<ChatMessage>>(
-                  stream: _chatService.getMessages(widget.groupId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: accentColor),
-                      );
-                    }
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'No messages yet',
-                          style: TextStyle(color: textColor),
-                        ),
-                      );
-                    }
-                    final messages = snapshot.data!;
-                    return ListView.builder(
-                      reverse: true,
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final message = messages[index];
-                        final isMe = message.senderId == _userId;
-                        return Align(
-                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 4, horizontal: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isMe
-                                  ? accentColor.withOpacity(0.2)
-                                  : Colors.grey[200],
-                              borderRadius: BorderRadius.circular(12),
+      ),
+      child: Scaffold(
+        appBar: _buildAppBar(),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF004e92),
+                Color(0xFF000428),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                  ),
+                  child: StreamBuilder<List<ChatMessage>>(
+                    stream: _chatService.getMessages(widget.groupId),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator(color: accentColor));
+                      }
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(child: Text('No messages yet', style: TextStyle(color: textColor)));
+                      }
+                      final messages = snapshot.data!;
+                      return ListView.builder(
+                        reverse: true,
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final message = messages[index];
+                          final isMe = message.senderId == _userId;
+                          return Align(
+                            alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isMe ? accentColor.withOpacity(0.2) : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                children: [
+                                  Text(':User  ${message.senderId}', style: const TextStyle(fontSize: 12, color: textColor)),
+                                  const SizedBox(height: 4),
+                                  Text(message.text, style: const TextStyle(fontSize: 16, color: textColor)),
+                                ],
+                              ),
                             ),
-                            child: Column(
-                              crossAxisAlignment:
-                              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  ':User  ${message.senderId}',
-                                  style: const TextStyle(
-                                      fontSize: 12, color: textColor),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  message.text,
-                                  style: const TextStyle(
-                                      fontSize: 16, color: textColor),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            _buildMessageInput(),
-          ],
+              _buildMessageInput(),
+            ],
+          ),
         ),
       ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      title: Text(
-        'Group Chat - ${widget.groupId}',
-        style: const TextStyle(color: Colors.white),
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(60.0),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF004e92),
+              Color(0xFF000428),
+            ],
+            // begin: Alignment.topLeft,
+            // end: Alignment.bottomRight,
+          ),
+        ),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          automaticallyImplyLeading: false, // This line removes the default back button
+          title: Text('Group Chat - ${widget.groupId}', style: const TextStyle(color: Colors.white)),
+          centerTitle: true,
+        ),
       ),
-      centerTitle: true,
-      backgroundColor: primaryColor,
-      elevation: 0,
     );
   }
 
@@ -164,10 +171,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               decoration: InputDecoration(
                 hintText: 'Type a message',
                 hintStyle: const TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 filled: true,
                 fillColor: Colors.white,
               ),

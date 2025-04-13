@@ -152,7 +152,7 @@ class _ScreensManagerState extends State<ScreensManager> {
           onTap: _onItemTapped,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          selectedItemColor: Colors.blueAccent,
+          // selectedItemColor: Colors.blueAccent,
           unselectedItemColor: Colors.grey,
           showSelectedLabels: true,
           showUnselectedLabels: false,

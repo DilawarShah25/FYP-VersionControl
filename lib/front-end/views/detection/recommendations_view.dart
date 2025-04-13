@@ -1,32 +1,77 @@
 import 'package:flutter/material.dart';
 
+import '../app_theme.dart';
+
 class RecommendationsView extends StatelessWidget {
+  const RecommendationsView({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Recommendations', style: TextStyle(fontSize: 20.0)),
-        backgroundColor: Colors.blue,
+        title: const Text('Recommendations'),
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: AppTheme.white,
       ),
-      body: const Padding(
-        padding: EdgeInsets.all(16.0),
+      body: Padding(
+        padding: const EdgeInsets.all(AppTheme.paddingMedium),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Personalized Recommendations for Your Hair Health',
-              style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
+              'Personalized Hair Health Tips',
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
-            SizedBox(height: 20),
-            // Displaying recommendations (can be a list)
-            ListTile(
-              leading: Icon(Icons.medical_services),  // Icon for medical advice
-              title: Text('Visit Dermatologist for Advanced Care', style: TextStyle(fontSize: 18.0)),
-            ),
-            ListTile(
-              leading: Icon(Icons.nature_people),  // Icon for natural remedies
-              title: Text('Try Herbal Remedies for Hair Growth', style: TextStyle(fontSize: 18.0)),
+            const SizedBox(height: AppTheme.paddingMedium),
+            Expanded(
+              child: ListView(
+                children: const [
+                  _RecommendationTile(
+                    icon: Icons.medical_services,
+                    title: 'Visit a Dermatologist',
+                    subtitle: 'For advanced care and professional diagnosis.',
+                  ),
+                  _RecommendationTile(
+                    icon: Icons.nature_people,
+                    title: 'Herbal Remedies',
+                    subtitle: 'Try natural solutions to promote hair growth.',
+                  ),
+                  _RecommendationTile(
+                    icon: Icons.bathtub,
+                    title: 'Gentle Hair Care',
+                    subtitle: 'Use sulfate-free shampoos to protect your scalp.',
+                  ),
+                ],
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecommendationTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _RecommendationTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppTheme.paddingSmall),
+      child: ListTile(
+        leading: Icon(icon, color: AppTheme.primaryColor),
+        title: Text(title, style: Theme.of(context).textTheme.bodyLarge),
+        subtitle: Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodyMedium ?? const TextStyle(fontSize: 14, color: Colors.black54),
         ),
       ),
     );
