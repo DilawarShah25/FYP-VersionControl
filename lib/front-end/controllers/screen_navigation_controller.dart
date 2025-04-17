@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../Community/view/community_feed_screen.dart';
 import '../utils/app_theme.dart';
 import '../views/authentication/login_view.dart';
 import '../views/dashboard/other_dashboard/blog/blog_view.dart';
 import '../views/dashboard/other_dashboard/faq/faq_view.dart';
-import '../views/dashboard/other_dashboard/group_chat_screen.dart';
 import '../views/dashboard/other_dashboard/home_view.dart';
 import '../views/dashboard/other_dashboard/profile_view.dart';
 
@@ -20,7 +22,7 @@ class _ScreensManagerState extends State<ScreensManager> {
   final List<Widget> _pages = [
     const HomeView(),
     const ProfileView(),
-    const GroupChatScreen(groupId: 'group1'), // Replaced CommunitySupportView
+    const CommunityFeedScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -34,8 +36,12 @@ class _ScreensManagerState extends State<ScreensManager> {
   }
 
   void _showPopupMenu(BuildContext context) {
-    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
-    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+    final RenderBox? button = context.findRenderObject() as RenderBox?;
+    if (overlay == null || button == null) {
+      debugPrint('Error: Overlay or button not found for popup menu');
+      return;
+    }
     final Offset position = button.localToGlobal(Offset.zero, ancestor: overlay);
 
     showMenu(
@@ -67,11 +73,18 @@ class _ScreensManagerState extends State<ScreensManager> {
       ],
     ).then((value) {
       if (value == 'LOGOUT') {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginView()),
-              (route) => false, // Clear navigation stack
-        );
+        FirebaseAuth.instance.signOut().then((_) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginView()),
+                (route) => false,
+          );
+        }).catchError((e) {
+          debugPrint('Logout error: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to logout: $e')),
+          );
+        });
       } else if (value == 'BLOG') {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const BlogView()));
       } else if (value == 'FAQ') {
@@ -83,11 +96,11 @@ class _ScreensManagerState extends State<ScreensManager> {
   Widget _buildPopupMenuItem(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, color: Colors.blueAccent),
+        Icon(icon, color: AppTheme.primaryColor),
         const SizedBox(width: 10),
         Text(
           text,
-          style: const TextStyle(fontSize: 16),
+          style: GoogleFonts.poppins(fontSize: 16),
         ),
       ],
     );
@@ -96,11 +109,11 @@ class _ScreensManagerState extends State<ScreensManager> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Base color
+      backgroundColor: Colors.white,
       appBar: _selectedIndex == 0
           ? null
           : PreferredSize(
-        preferredSize: const Size.fromHeight(0.0), // Minimal AppBar height
+        preferredSize: const Size.fromHeight(0.0),
         child: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -153,7 +166,6 @@ class _ScreensManagerState extends State<ScreensManager> {
           onTap: _onItemTapped,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          // selectedItemColor: Colors.blueAccent,
           unselectedItemColor: Colors.grey,
           showSelectedLabels: true,
           showUnselectedLabels: false,
@@ -163,6 +175,7 @@ class _ScreensManagerState extends State<ScreensManager> {
               icon: Icon(
                 Icons.home,
                 size: _selectedIndex == 0 ? 30 : 25,
+                color: _selectedIndex == 0 ? AppTheme.primaryColor : Colors.grey,
               ),
               label: 'Home',
             ),
@@ -170,20 +183,23 @@ class _ScreensManagerState extends State<ScreensManager> {
               icon: Icon(
                 Icons.person,
                 size: _selectedIndex == 1 ? 30 : 25,
+                color: _selectedIndex == 1 ? AppTheme.primaryColor : Colors.grey,
               ),
               label: 'Profile',
             ),
             BottomNavigationBarItem(
               icon: Icon(
-                Icons.chat, // Updated to reflect group chat
+                Icons.chat,
                 size: _selectedIndex == 2 ? 30 : 25,
+                color: _selectedIndex == 2 ? AppTheme.primaryColor : Colors.grey,
               ),
-              label: 'Chat', // Updated label
+              label: 'Community',
             ),
             BottomNavigationBarItem(
               icon: Icon(
                 Icons.menu,
                 size: _selectedIndex == 3 ? 30 : 25,
+                color: _selectedIndex == 3 ? AppTheme.primaryColor : Colors.grey,
               ),
               label: 'More',
             ),

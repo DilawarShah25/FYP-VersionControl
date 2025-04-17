@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -95,6 +96,10 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
           _profileImage = image;
           _errorMessage = null;
         });
+      } else {
+        setState(() {
+          _errorMessage = 'Failed to pick image. Try another source.';
+        });
       }
     }
   }
@@ -181,7 +186,13 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(AppTheme.paddingLarge),
-      color: AppTheme.primaryColor,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primaryColor, AppTheme.secondaryColor.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       child: Column(
         children: [
           GestureDetector(
@@ -208,12 +219,19 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
           const SizedBox(height: AppTheme.paddingMedium),
           Text(
             'Create Account',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: AppTheme.white),
+            style: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.white,
+            ),
           ),
           const SizedBox(height: AppTheme.paddingSmall),
           Text(
             'Join the Hair Loss System',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.white),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              color: AppTheme.white,
+            ),
           ),
         ],
       ),
@@ -223,6 +241,8 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   Widget _buildForm() {
     return Card(
       margin: const EdgeInsets.all(AppTheme.paddingMedium),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
       child: Padding(
         padding: const EdgeInsets.all(AppTheme.paddingLarge),
         child: Form(
@@ -232,33 +252,53 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person),
+                  prefixIcon: const Icon(Icons.person, color: AppTheme.primaryColor),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
+                style: GoogleFonts.poppins(fontSize: 16),
                 validator: (value) => value!.trim().isEmpty ? 'Enter your name' : null,
               ),
               const SizedBox(height: AppTheme.paddingMedium),
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Email',
-                  prefixIcon: Icon(Icons.email),
+                  prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
                 keyboardType: TextInputType.emailAddress,
+                style: GoogleFonts.poppins(fontSize: 16),
                 validator: (value) {
                   if (value!.trim().isEmpty) return 'Enter your email';
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'Enter a valid email';
+                  if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                    return 'Enter a valid email (e.g., user@domain.com)';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: AppTheme.paddingMedium),
               IntlPhoneField(
                 controller: _phoneNumberPartController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Phone Number',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
                 initialCountryCode: 'US',
+                style: GoogleFonts.poppins(fontSize: 16),
                 onCountryChanged: (country) {
                   setState(() => _phoneCountryCode = '+${country.dialCode}');
                 },
@@ -276,13 +316,19 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                 controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: const Icon(Icons.lock),
+                  prefixIcon: const Icon(Icons.lock, color: AppTheme.primaryColor),
                   suffixIcon: IconButton(
-                    icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off),
+                    icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off, color: AppTheme.primaryColor),
                     onPressed: () => setState(() => _showPassword = !_showPassword),
                   ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
                 obscureText: !_showPassword,
+                style: GoogleFonts.poppins(fontSize: 16),
                 validator: (value) {
                   if (value!.isEmpty) return 'Enter a password';
                   if (value.length < 6 || !RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
@@ -296,13 +342,19 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                 controller: _confirmPasswordController,
                 decoration: InputDecoration(
                   labelText: 'Confirm Password',
-                  prefixIcon: const Icon(Icons.lock),
+                  prefixIcon: const Icon(Icons.lock, color: AppTheme.primaryColor),
                   suffixIcon: IconButton(
-                    icon: Icon(_showConfirmPassword ? Icons.visibility : Icons.visibility_off),
+                    icon: Icon(_showConfirmPassword ? Icons.visibility : Icons.visibility_off, color: AppTheme.primaryColor),
                     onPressed: () => setState(() => _showConfirmPassword = !_showConfirmPassword),
                   ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
                 obscureText: !_showConfirmPassword,
+                style: GoogleFonts.poppins(fontSize: 16),
                 validator: (value) {
                   if (value!.isEmpty) return 'Confirm your password';
                   if (value != _passwordController.text) return 'Passwords do not match';
@@ -316,11 +368,12 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppTheme.paddingSmall),
                     child: ChoiceChip(
-                      label: Text(role),
+                      label: Text(role, style: GoogleFonts.poppins(fontSize: 16)),
                       selected: _selectedRole == role,
                       onSelected: (selected) => setState(() => _selectedRole = role),
                       selectedColor: AppTheme.secondaryColor,
                       backgroundColor: AppTheme.accentColor,
+                      labelStyle: TextStyle(color: _selectedRole == role ? AppTheme.white : Colors.black),
                     ),
                   );
                 }).toList(),
@@ -330,25 +383,36 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   padding: const EdgeInsets.only(top: AppTheme.paddingMedium),
                   child: Text(
                     _errorMessage!,
-                    style: TextStyle(color: AppTheme.errorColor),
+                    style: GoogleFonts.poppins(fontSize: 14, color: AppTheme.errorColor),
                     textAlign: TextAlign.center,
                   ),
                 ),
               const SizedBox(height: AppTheme.paddingLarge),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor))
                   : ElevatedButton(
                 onPressed: _register,
-                child: const Text('Register'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Text(
+                  'Register',
+                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.white),
+                ),
               ),
               const SizedBox(height: AppTheme.paddingMedium),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Already have an account? '),
+                  Text('Already have an account? ', style: GoogleFonts.poppins(fontSize: 14)),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Login'),
+                    child: Text(
+                      'Login',
+                      style: GoogleFonts.poppins(fontSize: 14, color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),

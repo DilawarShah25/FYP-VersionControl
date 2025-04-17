@@ -19,7 +19,6 @@ class FirestoreService {
         phoneCountryCode: data['phoneCountryCode'],
         phoneNumberPart: data['phoneNumberPart'],
         role: data['role'],
-        imageUrl: data['imageUrl'],
       );
     }).toList();
   }

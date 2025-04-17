@@ -5,7 +5,6 @@ class ProfileData {
   final String? phoneCountryCode;
   final String? phoneNumberPart;
   final String? role;
-  final String? imageUrl; // Firebase Storage URL
   final String? imagePath; // Local file path
 
   ProfileData({
@@ -15,7 +14,6 @@ class ProfileData {
     this.phoneCountryCode,
     this.phoneNumberPart,
     this.role,
-    this.imageUrl,
     this.imagePath,
   });
 
@@ -27,7 +25,6 @@ class ProfileData {
       'phoneCountryCode': phoneCountryCode,
       'phoneNumberPart': phoneNumberPart,
       'role': role,
-      'imageUrl': imageUrl,
     };
   }
 
@@ -39,7 +36,6 @@ class ProfileData {
       phoneCountryCode: map['phoneCountryCode'],
       phoneNumberPart: map['phoneNumberPart'],
       role: map['role'],
-      imageUrl: map['imageUrl'],
     );
   }
 }

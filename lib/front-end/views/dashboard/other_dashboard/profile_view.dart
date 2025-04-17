@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/countries.dart';
-import '../../../services/auth_service.dart';
 import '../../../utils/app_theme.dart';
-import '../../../utils/image_utils.dart';
-import 'dart:io';
+import '../../../Community/services/community_firebase_service.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -19,18 +19,18 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStateMixin {
-  final AuthService _authService = AuthService();
+  final CommunityFirebaseService _service = CommunityFirebaseService();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneNumberPartController = TextEditingController();
   final _roleController = TextEditingController();
-
   File? _profileImage;
   bool _isEditing = false;
   bool _isLoading = false;
   String? _phoneCountryCode;
   String? _imageBase64;
   String? _uid;
+  bool _showContactDetails = true;
   StreamSubscription<DocumentSnapshot>? _profileListener;
 
   late AnimationController _animationController;
@@ -55,10 +55,10 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
   Future<void> _initializeUser() async {
     setState(() => _isLoading = true);
     try {
-      User? user = _authService.getCurrentUser();
+      User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         _showSnackBar('No user signed in. Please log in.');
-        Navigator.pop(context);
+        Navigator.pushReplacementNamed(context, '/login');
         return;
       }
       _uid = user.uid;
@@ -102,6 +102,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
             : null;
         _phoneCountryCode = userData['phoneCountryCode']?.toString() ?? '+1';
         _phoneNumberPartController.text = userData['phoneNumberPart'] ?? '';
+        _showContactDetails = userData['showContactDetails'] ?? true;
       });
       debugPrint('Updated UI with Firestore data');
     }
@@ -117,12 +118,15 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       return;
     }
 
+    final name = _fullNameController.text.trim();
+    final email = _emailController.text.trim();
     final phoneNumberPart = _phoneNumberPartController.text.trim();
-    if (_fullNameController.text.trim().isEmpty) {
+
+    if (name.isEmpty) {
       _showSnackBar('Please enter your full name');
       return;
     }
-    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(_emailController.text.trim())) {
+    if (!RegExp(r'^[^@]+@[^@]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
       _showSnackBar('Please enter a valid email');
       return;
     }
@@ -138,51 +142,36 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     setState(() => _isLoading = true);
     try {
       String? newImageBase64 = _imageBase64;
-
       if (_profileImage != null) {
         if (!await _profileImage!.exists()) {
-          _showSnackBar('Selected image is invalid.');
+          _showSnackBar('Selected image file is missing or invalid.');
           setState(() => _profileImage = null);
           debugPrint('Invalid profile image');
           return;
         }
-
-        newImageBase64 = await ImageUtils.convertImageToBase64(_profileImage!);
-        if (newImageBase64 == null) {
-          _showSnackBar('Failed to process image.');
-          debugPrint('Image conversion failed');
-          return;
-        }
-        debugPrint('Converted image to base64 (length: ${newImageBase64.length})');
+        final imageBytes = await _profileImage!.readAsBytes();
+        newImageBase64 = base64Encode(imageBytes);
+        debugPrint('Compressed image to base64 (length: ${newImageBase64.length})');
       }
 
-      final updatedData = {
-        'name': _fullNameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phoneCountryCode': _phoneCountryCode!,
-        'phoneNumberPart': phoneNumberPart,
-        'role': _roleController.text.trim(),
-        'image_base64': newImageBase64 ?? '',
-      };
+      await _service.updateUserProfile(
+        userId: _uid!,
+        name: name,
+        email: email,
+        phoneCountryCode: _phoneCountryCode!,
+        phoneNumberPart: phoneNumberPart,
+        role: _roleController.text.trim(),
+        imageBase64: newImageBase64,
+        showContactDetails: _showContactDetails,
+      );
 
-      String? error = await _authService.updateUserData(_uid!, updatedData);
-      if (error != null) {
-        _showSnackBar(error);
-        debugPrint('Firestore update failed: $error');
-      } else {
-        setState(() {
-          _isEditing = false;
-          _imageBase64 = newImageBase64;
-          _profileImage = null;
-        });
-        ImageProvider? provider = _buildImageProvider();
-        if (provider != null && provider is MemoryImage) {
-          // Clear image cache to ensure new image displays
-          imageCache.evict(provider);
-        }
-        _showSuccessDialog();
-        debugPrint('Profile updated successfully');
-      }
+      setState(() {
+        _isEditing = false;
+        _imageBase64 = newImageBase64;
+        _profileImage = null;
+      });
+      _showSuccessDialog();
+      debugPrint('Profile updated successfully');
     } catch (e) {
       _showSnackBar('Error saving profile: $e');
       debugPrint('Save error: $e');
@@ -193,33 +182,29 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
   Future<void> _pickImage() async {
     if (!_isEditing) return;
-
-    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+    final ImagePicker picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(AppTheme.paddingMedium),
-        decoration: BoxDecoration(
-          color: AppTheme.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'Choose Image Source',
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppTheme.primaryColor),
-              title: const Text('Camera'),
+              title: Text('Camera', style: GoogleFonts.poppins()),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: AppTheme.primaryColor),
-              title: const Text('Gallery'),
+              title: Text('Gallery', style: GoogleFonts.poppins()),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -229,10 +214,12 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
     if (source != null) {
       try {
-        final imageFile = await ImageUtils.pickImage(source);
-        if (imageFile != null) {
-          setState(() => _profileImage = imageFile);
-          debugPrint('Picked image: ${imageFile.path}');
+        final pickedFile = await picker.pickImage(source: source);
+        if (pickedFile != null) {
+          setState(() => _profileImage = File(pickedFile.path));
+          debugPrint('Picked image: ${pickedFile.path}');
+        } else {
+          _showSnackBar('Failed to pick image.');
         }
       } catch (e) {
         _showSnackBar('Error picking image: $e');
@@ -245,7 +232,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message, style: const TextStyle(color: AppTheme.white)),
+          content: Text(message, style: GoogleFonts.poppins(color: AppTheme.white)),
           backgroundColor: AppTheme.errorColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -263,7 +250,11 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           backgroundColor: AppTheme.white,
           title: Text(
             'Success',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.secondaryColor),
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.secondaryColor,
+            ),
           ),
           content: Row(
             children: [
@@ -272,7 +263,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
               Expanded(
                 child: Text(
                   'Profile updated successfully!',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: GoogleFonts.poppins(fontSize: 16),
                 ),
               ),
             ],
@@ -282,7 +273,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'OK',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: GoogleFonts.poppins(
                   color: AppTheme.primaryColor,
                   fontWeight: FontWeight.bold,
                 ),
@@ -361,12 +352,16 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     return SliverAppBar(
       backgroundColor: AppTheme.primaryColor,
       foregroundColor: AppTheme.white,
-      expandedHeight: 200,
+      expandedHeight: 240,
       pinned: true,
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           _fullNameController.text.isEmpty ? 'Your Profile' : _fullNameController.text,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.white),
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.white,
+          ),
         ),
         background: Container(
           decoration: BoxDecoration(
@@ -376,9 +371,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
               end: Alignment.bottomRight,
             ),
           ),
-          child: Center(
-            child: _buildProfileImage(),
-          ),
+          child: Center(child: _buildProfileImage()),
         ),
       ),
     );
@@ -454,7 +447,11 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
               children: [
                 Text(
                   'Profile Details',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.primaryColor),
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
                 const SizedBox(height: AppTheme.paddingMedium),
                 _buildTextField(_fullNameController, 'Full Name', Icons.person_outline, enabled: _isEditing),
@@ -464,6 +461,19 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
                 _buildTextField(_roleController, 'Role', Icons.verified_user, enabled: false),
                 const SizedBox(height: AppTheme.paddingMedium),
                 _buildPhoneField(),
+                const SizedBox(height: AppTheme.paddingMedium),
+                if (_isEditing)
+                  SwitchListTile(
+                    title: Text(
+                      'Show contact details to others',
+                      style: GoogleFonts.poppins(fontSize: 16),
+                    ),
+                    value: _showContactDetails,
+                    onChanged: (value) {
+                      setState(() => _showContactDetails = value);
+                    },
+                    activeColor: AppTheme.secondaryColor,
+                  ),
                 const SizedBox(height: AppTheme.paddingLarge),
                 _buildButtons(),
               ],
@@ -496,7 +506,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           borderSide: BorderSide(color: AppTheme.accentColor.withOpacity(0.5)),
         ),
       ),
-      style: Theme.of(context).textTheme.bodyMedium,
+      style: GoogleFonts.poppins(fontSize: 16),
     );
   }
 
@@ -560,7 +570,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           borderSide: BorderSide(color: AppTheme.accentColor.withOpacity(0.5)),
         ),
       ),
-      style: Theme.of(context).textTheme.bodyMedium,
+      style: GoogleFonts.poppins(fontSize: 16),
     );
   }
 
@@ -587,7 +597,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Cancel'),
+              child: Text('Cancel', style: GoogleFonts.poppins(fontSize: 16)),
             ),
           ),
         if (_isEditing) const SizedBox(width: AppTheme.paddingMedium),
@@ -597,7 +607,12 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
             onPressed: _isLoading ? null : (_isEditing ? _saveProfile : () => setState(() => _isEditing = true)),
             child: _isLoading
                 ? const CircularProgressIndicator(color: AppTheme.white)
-                : Text(_isEditing ? 'Save' : 'Edit'),
+                : Text(_isEditing ? 'Save' : 'Edit', style: GoogleFonts.poppins(fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
           ),
         ),
       ],
