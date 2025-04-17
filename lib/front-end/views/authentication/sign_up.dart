@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import '../../controllers/session_controller.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/image_utils.dart';
@@ -18,6 +18,7 @@ class SignUpView extends StatefulWidget {
 
 class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
+  final SessionController _sessionController = SessionController();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -126,7 +127,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
       return;
     }
 
-    print('Initiating registration for: $email');
+    debugPrint('Initiating registration for: $email');
     final result = await _authService.registerWithEmailAndPassword(
       name: name,
       email: email,
@@ -140,15 +141,8 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     setState(() => _isLoading = false);
 
     if (result['error'] == null) {
-      print('Registration successful, saving preferences');
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('name', name);
-      await prefs.setString('email', email);
-      await prefs.setString('role', _selectedRole);
-      await prefs.setString('phoneCountryCode', phoneCountryCode);
-      await prefs.setString('phoneNumberPart', phoneNumberPart);
-      await prefs.setString('image_base64', result['image_base64'] ?? '');
-
+      await _sessionController.saveLastLogin();
+      debugPrint('Registration successful, session saved, navigating to VerificationView');
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => VerificationView(email: email)),
@@ -157,7 +151,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
       setState(() {
         _errorMessage = result['error'];
       });
-      print('Registration failed: $_errorMessage');
+      debugPrint('Registration failed: $_errorMessage');
     }
   }
 

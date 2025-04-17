@@ -3,12 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../utils/app_theme.dart';
+import '../../views/dashboard/other_dashboard/profile_view.dart';
 import '../controllers/community_controller.dart';
 import '../models/comment_model.dart';
 import '../models/post_model.dart';
 import 'create_post_screen.dart';
-import 'chat_screen.dart';
 
 class CommunityFeedScreen extends StatefulWidget {
   const CommunityFeedScreen({super.key});
@@ -31,7 +32,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('GrowTogether', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.white)),
+        title: Text('Share Your Experience', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.white)),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -127,24 +128,15 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      if (post.userId.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChatScreen(
-                              otherUserId: post.userId,
-                              otherUserName: updatedUserName,
-                            ),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProfileView(
+                            userId: post.userId,
+                            userName: updatedUserName,
                           ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Cannot message this user', style: GoogleFonts.poppins()),
-                            backgroundColor: AppTheme.errorColor,
-                          ),
-                        );
-                      }
+                        ),
+                      );
                     },
                     child: CircleAvatar(
                       radius: 24,
@@ -263,71 +255,44 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               ],
               const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          isLiked ? Icons.favorite : Icons.favorite_border,
-                          color: isLiked ? AppTheme.errorColor : Colors.black54,
-                          size: 24,
-                        ),
-                        onPressed: () async {
-                          try {
-                            await _controller.toggleLike(post.postId, currentUserId);
-                            setState(() {}); // Force UI refresh
-                          } catch (e) {
-                            debugPrint('Failed to update like: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to update like: $e', style: GoogleFonts.poppins()),
-                                backgroundColor: AppTheme.errorColor,
-                              ),
-                            );
-                          }
-                        },
-                        tooltip: isLiked ? 'Unlike' : 'Like',
-                      ),
-                      Text(
-                        '${post.likes.length}',
-                        style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
-                      ),
-                      const SizedBox(width: 16),
-                      IconButton(
-                        icon: const Icon(Icons.comment_outlined, color: AppTheme.primaryColor, size: 24),
-                        onPressed: () => _showCommentsDialog(post),
-                        tooltip: 'Comment',
-                      ),
-                      Text(
-                        '${post.comments.length}',
-                        style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
-                      ),
-                    ],
-                  ),
                   IconButton(
-                    icon: const Icon(Icons.chat_bubble_outline, color: AppTheme.secondaryColor, size: 24),
-                    onPressed: () {
-                      if (post.userId.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChatScreen(
-                              otherUserId: post.userId,
-                              otherUserName: updatedUserName,
-                            ),
-                          ),
-                        );
-                      } else {
+                    icon: Icon(
+                      isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: isLiked ? AppTheme.errorColor : Colors.black54,
+                      size: 24,
+                    ),
+                    onPressed: () async {
+                      try {
+                        await _controller.toggleLike(post.postId, currentUserId);
+                        setState(() {}); // Force UI refresh
+                        debugPrint('Like toggled for post: ${post.postId}');
+                      } catch (e) {
+                        debugPrint('Failed to toggle like: $e');
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Cannot message this user', style: GoogleFonts.poppins()),
+                            content: Text('Failed to update like: $e', style: GoogleFonts.poppins()),
                             backgroundColor: AppTheme.errorColor,
                           ),
                         );
                       }
                     },
-                    tooltip: 'Message',
+                    tooltip: isLiked ? 'Unlike' : 'Like',
+                  ),
+                  Text(
+                    _formatCount(post.likes.length, 'like'),
+                    style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
+                  ),
+                  const SizedBox(width: 16),
+                  IconButton(
+                    icon: const Icon(Icons.comment_outlined, color: AppTheme.primaryColor, size: 24),
+                    onPressed: () => _showCommentsDialog(post),
+                    tooltip: 'Comment',
+                  ),
+                  Text(
+                    _formatCount(post.comments.length, 'comment'),
+                    style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
                   ),
                 ],
               ),
@@ -336,6 +301,35 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
         ),
       ),
     );
+  }
+
+  String _formatCount(int count, String type) {
+    if (count >= 1000000) {
+      return '${(count / 1000000).toStringAsFixed(1)}M $type${count == 1 ? '' : 's'}';
+    } else if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}k $type${count == 1 ? '' : 's'}';
+    }
+    return '$count $type${count == 1 ? '' : 's'}';
+  }
+
+  String _formatTimestamp(Timestamp timestamp) {
+    final now = DateTime.now();
+    final date = timestamp.toDate();
+    final diff = now.difference(date);
+    String relativeTime;
+
+    if (diff.inDays > 0) {
+      relativeTime = '${diff.inDays}d ago';
+    } else if (diff.inHours > 0) {
+      relativeTime = '${diff.inHours}h ago';
+    } else if (diff.inMinutes > 0) {
+      relativeTime = '${diff.inMinutes}m ago';
+    } else {
+      relativeTime = 'Just now';
+    }
+
+    final formattedDateTime = DateFormat('MMMM dd, yyyy \'at\' hh:mm a').format(date);
+    return '$formattedDateTime ($relativeTime)';
   }
 
   void _showCommentsDialog(PostModel post) {
@@ -476,15 +470,5 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
         );
       },
     );
-  }
-
-  String _formatTimestamp(Timestamp timestamp) {
-    final now = DateTime.now();
-    final date = timestamp.toDate();
-    final diff = now.difference(date);
-    if (diff.inDays > 0) return '${diff.inDays}d ago';
-    if (diff.inHours > 0) return '${diff.inHours}h ago';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
-    return 'Just now';
   }
 }

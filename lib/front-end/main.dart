@@ -3,7 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:scalpsense/front-end/views/authentication/sign_up.dart';
 import 'controllers/screen_navigation_controller.dart';
+import 'controllers/session_controller.dart';
 import 'utils/app_theme.dart';
 import 'views/authentication/login_view.dart';
 import 'views/dashboard/other_dashboard/blog/blog_view.dart';
@@ -33,7 +35,6 @@ void main() async {
       debugPrint('Firebase initialization failed on attempt $retryCount: $e');
       if (retryCount == maxRetries) {
         debugPrint('Max retries reached. Proceeding with limited functionality.');
-        // Optionally, show a user-facing error in the app
       }
       await Future.delayed(const Duration(seconds: 2)); // Wait before retrying
     }
@@ -43,10 +44,6 @@ void main() async {
   FirebaseAuth.instance.authStateChanges().listen((user) {
     debugPrint('Auth state changed: UID=${user?.uid ?? "null"}, Email=${user?.email ?? "null"}');
   });
-
-  // Optionally clear Firestore cache for debugging (uncomment if needed)
-  // await FirebaseFirestore.instance.clearPersistence();
-  // debugPrint('Firestore cache cleared for debugging');
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const MyApp());
@@ -61,10 +58,11 @@ class MyApp extends StatelessWidget {
       title: 'Hair Health App',
       theme: AppTheme.theme,
       debugShowCheckedModeBanner: false,
-      navigatorKey: GlobalKey<NavigatorState>(), // Add navigatorKey for global navigation
+      navigatorKey: GlobalKey<NavigatorState>(),
       home: const SplashView(),
       routes: {
         '/login': (context) => const LoginView(),
+        '/signup': (context) => const SignUpView(),
         '/screens_manager': (context) => const ScreensManager(),
         '/home': (context) => const HomeView(),
         '/community': (context) => const CommunityFeedScreen(),
@@ -84,6 +82,8 @@ class SplashView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final SessionController sessionController = SessionController();
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -94,24 +94,43 @@ class SplashView extends StatelessWidget {
           );
         }
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          try {
-            if (snapshot.hasData && snapshot.data != null) {
-              debugPrint('SplashView: User authenticated, UID=${snapshot.data!.uid}, navigating to /screens_manager');
-              Navigator.pushReplacementNamed(context, '/screens_manager');
-            } else {
-              debugPrint('SplashView: No authenticated user, navigating to /login');
-              Navigator.pushReplacementNamed(context, '/login');
-            }
-          } catch (e) {
-            debugPrint('Navigation error in SplashView: $e');
-            // Fallback to LoginView
+        if (!snapshot.hasData || snapshot.data == null) {
+          debugPrint('SplashView: No authenticated user, navigating to /login');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
             Navigator.pushReplacementNamed(context, '/login');
-          }
-        });
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor)),
+          );
+        }
 
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor)),
+        // Check session validity
+        return FutureBuilder<bool>(
+          future: sessionController.isSessionValid(),
+          builder: (context, sessionSnapshot) {
+            if (sessionSnapshot.connectionState == ConnectionState.waiting) {
+              debugPrint('SplashView: Waiting for session validation');
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor)),
+              );
+            }
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (sessionSnapshot.data == true) {
+                debugPrint('SplashView: Session valid, navigating to /screens_manager');
+                Navigator.pushReplacementNamed(context, '/screens_manager');
+              } else {
+                debugPrint('SplashView: Session expired, signing out and navigating to /login');
+                FirebaseAuth.instance.signOut();
+                sessionController.clearSession();
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            });
+
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor)),
+            );
+          },
         );
       },
     );

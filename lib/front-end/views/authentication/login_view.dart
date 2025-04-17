@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:scalpsense/front-end/views/authentication/sign_up.dart';
 import '../../controllers/screen_navigation_controller.dart';
+import '../../controllers/session_controller.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_theme.dart';
 
@@ -14,6 +15,7 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   final AuthService _authService = AuthService();
+  final SessionController _sessionController = SessionController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _errorMessage;
@@ -31,22 +33,20 @@ class _LoginViewState extends State<LoginView> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    print('Initiating login for: $email');
+    debugPrint('Initiating login for: $email');
     final result = await _authService.signInWithEmailAndPassword(email, password);
 
     setState(() => _isLoading = false);
 
     if (result['error'] == null) {
-      print('Login successful, navigating to ScreensManager');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ScreensManager()),
-      );
+      await _sessionController.saveLastLogin();
+      debugPrint('Login successful, session saved, navigating to ScreensManager');
+      Navigator.pushReplacementNamed(context, '/screens_manager');
     } else {
       setState(() {
         _errorMessage = result['error'];
       });
-      print('Login failed: $_errorMessage');
+      debugPrint('Login failed: $_errorMessage');
     }
   }
 
@@ -76,7 +76,7 @@ class _LoginViewState extends State<LoginView> {
       setState(() {
         _errorMessage = result;
       });
-      print('Password reset failed: $_errorMessage');
+      debugPrint('Password reset failed: $_errorMessage');
     }
   }
 

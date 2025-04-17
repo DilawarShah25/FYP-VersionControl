@@ -66,26 +66,9 @@ class _ScreensManagerState extends State<ScreensManager> {
           value: 'FAQ',
           child: _buildPopupMenuItem(Icons.help_outline, 'FAQ'),
         ),
-        PopupMenuItem(
-          value: 'LOGOUT',
-          child: _buildPopupMenuItem(Icons.logout, 'Logout'),
-        ),
       ],
     ).then((value) {
-      if (value == 'LOGOUT') {
-        FirebaseAuth.instance.signOut().then((_) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginView()),
-                (route) => false,
-          );
-        }).catchError((e) {
-          debugPrint('Logout error: $e');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to logout: $e')),
-          );
-        });
-      } else if (value == 'BLOG') {
+      if (value == 'BLOG') {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const BlogView()));
       } else if (value == 'FAQ') {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const FaqView()));
