@@ -1,45 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart'; // Import the markdown package
+import 'package:flutter_markdown/flutter_markdown.dart';
+import '../../../../utils/app_theme.dart';
 
 class DetailScreen extends StatelessWidget {
   final String title;
-  final String imagePath;
+  final String? imagePath;
   final String content;
 
   const DetailScreen({
     super.key,
     required this.title,
-    required this.imagePath,
+    this.imagePath,
     required this.content,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF004e92),
-                Color(0xFF000428),
-              ],
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
             ),
           ),
         ),
-        title: const Text(
-          'Blog',
-          style: TextStyle(
+        title: Text(
+          imagePath != null ? 'Blog' : 'FAQ',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppTheme.white,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontSize: 36,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white), // Change back button color to white
+          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -48,65 +46,64 @@ class DetailScreen extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.only(top: 5.0), // Remove padding between appbar and content
+            padding: const EdgeInsets.only(top: 5.0),
             child: Container(
-              width: double.infinity, // Ensure full width
+              width: double.infinity,
               decoration: const BoxDecoration(
-                color: Colors.white, // Set background color to white
+                color: AppTheme.white,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title with a larger size and bold style
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0), // Ensure left and right padding
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        fontSize: 24, // Larger title size
+                        color: Colors.black87,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 5.0), // Space between title and image
-                  // Image below the title
-                  Center(
-                    child: SizedBox(
-                      // width: double.infinity,
-                      width: 330,
-                      child: Image.asset(
-                        imagePath,
-                        fit: BoxFit.cover,
+                  const SizedBox(height: 5.0),
+                  if (imagePath != null)
+                    Center(
+                      child: SizedBox(
+                        width: 330,
+                        child: Image.asset(
+                          imagePath!,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20), // Space between image and content
-                  // Markdown formatted content
+                  const SizedBox(height: 20),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0), // Add padding to content
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: MarkdownBody(
                       data: content,
                       styleSheet: MarkdownStyleSheet(
-                        h1: const TextStyle(
-                          fontSize: 28,
+                        h1: Theme.of(context).textTheme.headlineLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        h2: const TextStyle(
-                          fontSize: 24,
+                        h2: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        h3: const TextStyle(
-                          fontSize: 20,
+                        h3: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        p: const TextStyle(
-                          fontSize: 16,
+                        p: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           height: 1.5,
+                          color: Colors.black54,
                         ),
-                        blockquote: const TextStyle(
-                          fontSize: 16,
+                        blockquote: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontStyle: FontStyle.italic,
-                          color: Colors.grey,
+                          color: Colors.grey[600],
+                        ),
+                        listBullet: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.black54,
                         ),
                       ),
                     ),

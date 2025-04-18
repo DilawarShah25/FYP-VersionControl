@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'detail_screen.dart'; // Import the detail screen
-import 'blog_section.dart'; // Import the BlogSection widget
-import 'package:flutter_markdown/flutter_markdown.dart'; // Import the markdown package
+import 'package:google_fonts/google_fonts.dart';
+import '../../../../utils/app_theme.dart';
+import 'detail_screen.dart';
+import 'blog_section.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class BlogView extends StatefulWidget {
   const BlogView({super.key});
@@ -37,107 +39,111 @@ class _BlogViewState extends State<BlogView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70.0),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF004e92),
-                  Color(0xFF000428),
-                ],
-              ),
-            ),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          title: const Padding(
-            padding: EdgeInsets.only(right: 50.0, top: 12.0),
-            child: Center(
-              child: Text(
-                'Blog',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 36,
-                ),
-              ),
-            ),
-          ),
-          centerTitle: true,
-        ),
-      ),
-      body: SafeArea(
-        child: Container(
+      backgroundColor: AppTheme.backgroundColor,
+      appBar: _buildAppBar(context),
+      body: _buildBody(context),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(70.0),
+      child: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF004e92),
-                Color(0xFF000428),
-              ],
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
-          child: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  width: double.infinity, // Ensure full width
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, -4),
-                      ),
-                    ],
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Blog',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppTheme.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppTheme.primaryColor, AppTheme.accentColor],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 20),
-                        // Blog Sections
-                        for (var blog in blogData) // for loop to dynamically render
-                          BlogSection(
-                            title: blog['title']!,
-                            imagePath: blog['imagePath']!,
-                            onImageTap: () {
-                              String content = _getContentForBlog(blog['destination']!);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return DetailScreen(
-                                      title: blog['title']!,
-                                      imagePath: blog['imagePath']!,
-                                      content: content,
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                      ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -4),
                     ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.paddingMedium,
+                    vertical: AppTheme.paddingLarge,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: blogData
+                        .map((blog) => _buildBlogSection(context, blog))
+                        .toList(),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBlogSection(BuildContext context, Map<String, String> blog) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.paddingMedium),
+      child: BlogSection(
+        title: blog['title']!,
+        imagePath: blog['imagePath']!,
+        onImageTap: () {
+          String content = _getContentForBlog(blog['destination']!);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailScreen(
+                title: blog['title']!,
+                imagePath: blog['imagePath']!,
+                content: content,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -338,5 +344,4 @@ Taking care of your scalp is just as important as caring for your hair. By follo
         return 'Content not available';
     }
   }
-
 }

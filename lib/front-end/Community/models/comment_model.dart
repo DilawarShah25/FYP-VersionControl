@@ -25,4 +25,13 @@ class CommentModel {
       timestamp: data['timestamp'] ?? Timestamp.now(),
     );
   }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'userId': userId,
+      'userName': userName,
+      'commentText': commentText,
+      'timestamp': timestamp,
+    };
+  }
 }

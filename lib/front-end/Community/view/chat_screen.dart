@@ -2,8 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../utils/app_theme.dart';
-import '../controllers/community_controller.dart';
+import '../services/community_firebase_service.dart';
 import '../models/message_model.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final CommunityController _controller = CommunityController();
+  final CommunityFirebaseService _service = CommunityFirebaseService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<MessageModel> _cachedMessages = [];
@@ -30,8 +31,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     debugPrint('ChatScreen initialized with otherUserId: ${widget.otherUserId}, otherUserName: ${widget.otherUserName}');
-    // Debug chats collection on initialization
-    _controller.service.debugChatsCollection(otherUserId: widget.otherUserId);
+    _service.debugChatsCollection(otherUserId: widget.otherUserId);
   }
 
   @override
@@ -54,10 +54,11 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
-    debugPrint('Current user in ChatScreen: ${currentUser?.uid ?? "null"}');
     if (currentUser == null) {
       debugPrint('User not authenticated, redirecting to login');
-      Navigator.pushReplacementNamed(context, '/login');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/login');
+      });
       return const SizedBox();
     }
 
@@ -81,6 +82,15 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report, color: AppTheme.white),
+            onPressed: () async {
+              await _service.debugChatsCollection(otherUserId: widget.otherUserId);
+            },
+            tooltip: 'Debug Chats',
+          ),
+        ],
       ),
       body: Container(
         color: AppTheme.backgroundColor,
@@ -88,139 +98,66 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Expanded(
               child: StreamBuilder<List<MessageModel>>(
-                stream: _controller.getMessages(widget.otherUserId),
-                initialData: const [],
+                stream: _service.getMessages(widget.otherUserId),
+                initialData: _cachedMessages,
                 builder: (context, snapshot) {
                   debugPrint('StreamBuilder state: ${snapshot.connectionState}, hasData: ${snapshot.hasData}, hasError: ${snapshot.hasError}');
 
                   if (snapshot.connectionState == ConnectionState.waiting && _cachedMessages.isEmpty) {
-                    debugPrint('Waiting for messages to load for user: ${currentUser.uid}, otherUser: ${widget.otherUserId}');
                     return const Center(
                       child: CircularProgressIndicator(color: AppTheme.secondaryColor),
                     );
                   }
 
-                  if (snapshot.hasData && snapshot.data != null) {
+                  if (snapshot.hasData) {
                     _cachedMessages = snapshot.data!;
-                    debugPrint('Received ${snapshot.data!.length} messages for user: ${currentUser.uid}, otherUser: ${widget.otherUserId}');
-                    if (snapshot.data!.isEmpty) {
-                      debugPrint('No messages available, prompting to start conversation');
-                    }
+                    debugPrint('Received ${_cachedMessages.length} messages');
+                    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
                   }
 
                   if (snapshot.hasError) {
                     final error = snapshot.error.toString();
                     debugPrint('Error loading messages: $error');
-                    String errorMessage = 'Error loading messages';
+                    String errorMessage = 'Failed to load messages';
                     if (error.contains('permission-denied')) {
                       errorMessage = 'Unable to load messages. Try sending a message to start the conversation.';
-                    } else if (error.contains('index')) {
-                      errorMessage = 'Query requires an index. Contact support or check Firestore console.';
-                    } else if (error.contains('Invalid message')) {
-                      errorMessage = 'Invalid message data in Firestore.';
+                    } else if (error.contains('Invalid recipient ID')) {
+                      errorMessage = 'Invalid user ID. Please select a valid user.';
                     } else if (error.contains('No authenticated user')) {
                       errorMessage = 'Not authenticated. Please sign in again.';
-                    } else if (error.contains('otherUserId cannot be empty') || error.contains('Invalid recipient ID')) {
-                      errorMessage = 'Invalid user ID for chat. Please select a valid user.';
                     }
 
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: _cachedMessages.isEmpty
-                              ? Center(
-                            child: Text(
-                              'No messages yet. Send a message to start the conversation!',
-                              style: GoogleFonts.poppins(fontSize: 16, color: Colors.black54),
-                              textAlign: TextAlign.center,
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.error_outline, size: 60, color: AppTheme.errorColor),
+                          const SizedBox(height: 16),
+                          Text(
+                            errorMessage,
+                            style: GoogleFonts.poppins(fontSize: 16, color: AppTheme.errorColor),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () => setState(() {}),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.secondaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                          )
-                              : ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.all(AppTheme.paddingMedium),
-                            itemCount: _cachedMessages.length,
-                            itemBuilder: (context, index) {
-                              final message = _cachedMessages[index];
-                              final isSentByCurrentUser = message.senderId == currentUser.uid;
-                              return Align(
-                                alignment: isSentByCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(vertical: 4),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: isSentByCurrentUser
-                                        ? AppTheme.primaryColor
-                                        : AppTheme.accentColor.withOpacity(0.3),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: isSentByCurrentUser
-                                        ? CrossAxisAlignment.end
-                                        : CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        message.text,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          color: isSentByCurrentUser ? AppTheme.white : Colors.black87,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        _formatTimestamp(message.timestamp),
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 10,
-                                          color: isSentByCurrentUser ? AppTheme.white.withOpacity(0.7) : Colors.black54,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
+                            child: Text(
+                              'Retry',
+                              style: GoogleFonts.poppins(fontSize: 16, color: AppTheme.white),
+                            ),
                           ),
-                        ),
-                        Container(
-                          color: AppTheme.errorColor.withOpacity(0.1),
-                          padding: const EdgeInsets.all(AppTheme.paddingMedium),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '$errorMessage\nDetails: $error',
-                                style: GoogleFonts.poppins(fontSize: 14, color: AppTheme.errorColor),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 8),
-                              ElevatedButton(
-                                onPressed: () {
-                                  setState(() {});
-                                  _controller.service.debugChatsCollection(otherUserId: widget.otherUserId);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.secondaryColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Retry',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    color: AppTheme.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     );
                   }
 
-                  final messages = _cachedMessages;
-                  debugPrint('Rendering ${messages.length} messages');
-                  if (messages.isEmpty) {
+                  if (_cachedMessages.isEmpty) {
                     return Center(
                       child: Text(
                         'No messages yet. Send a message to start the conversation!',
@@ -230,13 +167,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                   }
 
-                  WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
                   return ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(AppTheme.paddingMedium),
-                    itemCount: messages.length,
+                    itemCount: _cachedMessages.length,
                     itemBuilder: (context, index) {
-                      final message = messages[index];
+                      final message = _cachedMessages[index];
                       final isSentByCurrentUser = message.senderId == currentUser.uid;
                       return Align(
                         alignment: isSentByCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -306,24 +242,15 @@ class _ChatScreenState extends State<ChatScreen> {
                       if (text.isNotEmpty) {
                         debugPrint('Sending message to ${widget.otherUserId}: $text');
                         try {
-                          await _controller.sendMessage(widget.otherUserId, text);
-                          debugPrint('Message sent successfully');
+                          await _service.sendMessage(widget.otherUserId, text);
                           _messageController.clear();
                           WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
                         } catch (e) {
                           debugPrint('Error sending message: $e');
-                          String errorMessage = 'Failed to send message';
-                          if (e.toString().contains('permission-denied')) {
-                            errorMessage = 'Permission denied. Check Firestore rules or recipient ID.';
-                          } else if (e.toString().contains('empty')) {
-                            errorMessage = 'Message or recipient ID cannot be empty.';
-                          } else if (e.toString().contains('Invalid recipient ID')) {
-                            errorMessage = 'Invalid user ID. Please select a valid user.';
-                          }
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                '$errorMessage\nDetails: $e',
+                                'Failed to send message: $e',
                                 style: GoogleFonts.poppins(),
                               ),
                               backgroundColor: AppTheme.errorColor,
@@ -355,12 +282,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   String _formatTimestamp(Timestamp timestamp) {
-    final now = DateTime.now();
     final date = timestamp.toDate();
-    final diff = now.difference(date);
-    if (diff.inDays > 0) return '${diff.inDays}d ago';
-    if (diff.inHours > 0) return '${diff.inHours}h ago';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
-    return 'Just now';
+    return DateFormat('hh:mm a').format(date);
   }
 }

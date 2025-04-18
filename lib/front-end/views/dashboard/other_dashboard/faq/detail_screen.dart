@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-// DetailScreen to display content from the FAQ items
+import '../../../../utils/app_theme.dart';
+
 class DetailScreen extends StatelessWidget {
   final String title;
   final String content;
@@ -15,30 +16,27 @@ class DetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF004e92),
-                Color(0xFF000428),
-              ],
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
             ),
           ),
         ),
-        title: const Text(
+        title: Text(
           'FAQ',
-          style: TextStyle(
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppTheme.white,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontSize: 36,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -51,7 +49,7 @@ class DetailScreen extends StatelessWidget {
             child: Container(
               width: double.infinity,
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: AppTheme.white,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,38 +58,38 @@ class DetailScreen extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 20.0),
                   ),
                   const SizedBox(height: 10),
-                  // Markdown formatted content
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: MarkdownBody(
                       data: content,
                       styleSheet: MarkdownStyleSheet(
-                        h1: const TextStyle(
-                          fontSize: 28,
+                        h1: Theme.of(context).textTheme.headlineLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        h2: const TextStyle(
-                          fontSize: 24,
+                        h2: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        h3: const TextStyle(
-                          fontSize: 20,
+                        h3: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        p: const TextStyle(
-                          fontSize: 16,
+                        p: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           height: 1.5,
+                          color: Colors.black54,
                         ),
-                        blockquote: const TextStyle(
-                          fontSize: 16,
+                        blockquote: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontStyle: FontStyle.italic,
-                          color: Colors.grey,
+                          color: Colors.grey[600],
+                        ),
+                        listBullet: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.black54,
                         ),
                       ),
                     ),
                   ),
-                  // Ensure scrolling works smoothly
-                  const SizedBox(height: 120), // Add space at the bottom
+                  const SizedBox(height: 120),
                 ],
               ),
             ),

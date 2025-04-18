@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'comment_model.dart';
 
 class PostModel {
   final String postId;
@@ -10,7 +9,7 @@ class PostModel {
   final String? imageBase64;
   final Timestamp timestamp;
   final List<String> likes;
-  final List<CommentModel> comments;
+  final List<String> comments;
 
   PostModel({
     required this.postId,
@@ -35,7 +34,7 @@ class PostModel {
       imageBase64: data['imageBase64'],
       timestamp: data['timestamp'] ?? Timestamp.now(),
       likes: List<String>.from(data['likes'] ?? []),
-      comments: [],
+      comments: List<String>.from(data['comments'] ?? []),
     );
   }
 
@@ -48,6 +47,7 @@ class PostModel {
       'imageBase64': imageBase64,
       'timestamp': timestamp,
       'likes': likes,
+      'comments': comments,
     };
   }
 }

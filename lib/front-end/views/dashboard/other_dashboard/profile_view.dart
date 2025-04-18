@@ -152,49 +152,86 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     final name = _fullNameController.text.trim();
     final email = _emailController.text.trim();
     final phoneNumberPart = _phoneNumberPartController.text.trim();
+    final role = _roleController.text.trim();
 
-    if (name.isEmpty) {
-      _showSnackBar('Please enter your full name');
+    // Fetch current Firestore data to compare
+    final currentData = await _service.getUserProfile(_uid!);
+    if (currentData == null) {
+      _showSnackBar('Current user data not found.');
+      debugPrint('No current data for user: $_uid');
       return;
     }
-    if (!RegExp(r'^[^@]+@[^@]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
-      _showSnackBar('Please enter a valid email');
-      return;
+
+    // Map to store only changed fields
+    final Map<String, dynamic> updates = {};
+
+    // Check for changes in each field
+    if (name != (currentData['name'] ?? '') && name.isNotEmpty) {
+      if (name.isEmpty) {
+        _showSnackBar('Please enter your full name');
+        return;
+      }
+      updates['name'] = name;
     }
-    if (_phoneCountryCode == null) {
-      _showSnackBar('Please select a country code');
-      return;
+
+    if (email != (currentData['email'] ?? '') && email.isNotEmpty) {
+      if (!RegExp(r'^[^@]+@[^@]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
+        _showSnackBar('Please enter a valid email');
+        return;
+      }
+      updates['email'] = email;
     }
-    if (!_isValidPhoneNumberPart(phoneNumberPart)) {
-      _showSnackBar('Phone number must be 6-12 digits, no leading 0');
+
+    if (phoneNumberPart != (currentData['phoneNumberPart'] ?? '') ||
+        _phoneCountryCode != (currentData['phoneCountryCode'] ?? '+1')) {
+      if (_phoneCountryCode == null) {
+        _showSnackBar('Please select a country code');
+        return;
+      }
+      if (!_isValidPhoneNumberPart(phoneNumberPart)) {
+        _showSnackBar('Phone number must be 6-12 digits, no leading 0');
+        return;
+      }
+      updates['phoneCountryCode'] = _phoneCountryCode;
+      updates['phoneNumberPart'] = phoneNumberPart;
+    }
+
+    if (role != (currentData['role'] ?? 'User') && role.isNotEmpty) {
+      updates['role'] = role;
+    }
+
+    if (_showContactDetails != (currentData['showContactDetails'] ?? true)) {
+      updates['showContactDetails'] = _showContactDetails;
+    }
+
+    // Handle image update
+    String? newImageBase64 = _imageBase64;
+    if (_profileImage != null) {
+      if (!await _profileImage!.exists()) {
+        _showSnackBar('Selected image file is missing or invalid.');
+        setState(() => _profileImage = null);
+        debugPrint('Invalid profile image');
+        return;
+      }
+      final imageBytes = await _profileImage!.readAsBytes();
+      newImageBase64 = base64Encode(imageBytes);
+      if (newImageBase64 != _imageBase64) {
+        updates['image_base64'] = newImageBase64;
+        debugPrint('Compressed image to base64 (length: ${newImageBase64.length})');
+      }
+    }
+
+    // If no changes detected, show message and exit
+    if (updates.isEmpty) {
+      _showSnackBar('No changes to save.');
+      setState(() => _isEditing = false);
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      String? newImageBase64 = _imageBase64;
-      if (_profileImage != null) {
-        if (!await _profileImage!.exists()) {
-          _showSnackBar('Selected image file is missing or invalid.');
-          setState(() => _profileImage = null);
-          debugPrint('Invalid profile image');
-          return;
-        }
-        final imageBytes = await _profileImage!.readAsBytes();
-        newImageBase64 = base64Encode(imageBytes);
-        debugPrint('Compressed image to base64 (length: ${newImageBase64.length})');
-      }
-
-      await _service.updateUserProfile(
-        userId: _uid!,
-        name: name,
-        email: email,
-        phoneCountryCode: _phoneCountryCode!,
-        phoneNumberPart: phoneNumberPart,
-        role: _roleController.text.trim(),
-        imageBase64: newImageBase64,
-        showContactDetails: _showContactDetails,
-      );
+      // Update only the changed fields in Firestore
+      await FirebaseFirestore.instance.collection('users').doc(_uid).update(updates);
 
       setState(() {
         _isEditing = false;
@@ -202,7 +239,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         _profileImage = null;
       });
       _showSuccessDialog();
-      debugPrint('Profile updated successfully');
+      debugPrint('Profile updated successfully with fields: ${updates.keys.join(', ')}');
     } catch (e) {
       _showSnackBar('Error saving profile: $e');
       debugPrint('Save error: $e');
@@ -216,7 +253,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     final ImagePicker picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) => Container(
@@ -228,6 +265,12 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
               'Choose Image Source',
               style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Make sure the image size is less than 1MB',
+              style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+            ),
+            const SizedBox(height: 8),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppTheme.primaryColor),
               title: Text('Camera', style: GoogleFonts.poppins()),
@@ -367,7 +410,6 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
         ),
-
         child: Scaffold(
           backgroundColor: AppTheme.backgroundColor,
           extendBodyBehindAppBar: true,
@@ -413,8 +455,6 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
                 )
               else
                 IconButton(
-
-
                   icon: const Icon(Icons.arrow_back, color: AppTheme.white),
                   onPressed: () => Navigator.pop(context),
                   tooltip: 'Back',
@@ -763,7 +803,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: AppTheme.primaryColor,
+                  color: AppTheme.secondaryColor,
                 ),
               ),
             ),

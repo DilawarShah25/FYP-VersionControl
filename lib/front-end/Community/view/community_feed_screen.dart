@@ -8,6 +8,7 @@ import '../../utils/app_theme.dart';
 import '../../views/dashboard/other_dashboard/profile_view.dart';
 import '../controllers/community_controller.dart';
 import '../models/comment_model.dart';
+import '../models/optimistic_comment_mixin.dart';
 import '../models/post_model.dart';
 import 'create_post_screen.dart';
 
@@ -18,8 +19,10 @@ class CommunityFeedScreen extends StatefulWidget {
   State<CommunityFeedScreen> createState() => _CommunityFeedScreenState();
 }
 
-class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
+class _CommunityFeedScreenState extends State<CommunityFeedScreen>
+    with OptimisticCommentMixin<CommunityFeedScreen> {
   final CommunityController _controller = CommunityController();
+  Map<String, bool> _localLikeState = {}; // Track local like state for immediate UI feedback
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +35,10 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Share Your Experience', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.white)),
+        title: Text(
+          'Share Your Experience',
+          style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.white),
+        ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -65,9 +71,29 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
             if (snapshot.hasError) {
               debugPrint('Error loading posts: ${snapshot.error}');
               return Center(
-                child: Text(
-                  'Error loading posts',
-                  style: GoogleFonts.poppins(fontSize: 16, color: AppTheme.errorColor),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error_outline, size: 60, color: AppTheme.errorColor),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading posts: ${snapshot.error}',
+                      style: GoogleFonts.poppins(fontSize: 16, color: AppTheme.errorColor),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => setState(() {}),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text(
+                        'Retry',
+                        style: GoogleFonts.poppins(fontSize: 16, color: AppTheme.white),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
@@ -109,7 +135,8 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   }
 
   Widget _buildPostCard(PostModel post, String updatedUserName, String currentUserId) {
-    final isLiked = post.likes.contains(currentUserId);
+    // Use local like state if available, otherwise fall back to post.likes
+    final isLiked = _localLikeState[post.postId] ?? post.likes.contains(currentUserId);
     final isOwnPost = post.userId == currentUserId;
 
     return Card(
@@ -167,10 +194,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                         ),
                         Text(
                           _formatTimestamp(post.timestamp),
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.black54,
-                          ),
+                          style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
                         ),
                       ],
                     ),
@@ -265,10 +289,17 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                     ),
                     onPressed: () async {
                       try {
+                        // Update local state for immediate feedback
+                        setState(() {
+                          _localLikeState[post.postId] = !isLiked;
+                        });
                         await _controller.toggleLike(post.postId, currentUserId);
-                        setState(() {}); // Force UI refresh
                         debugPrint('Like toggled for post: ${post.postId}');
                       } catch (e) {
+                        // Revert local state on error
+                        setState(() {
+                          _localLikeState.remove(post.postId);
+                        });
                         debugPrint('Failed to toggle like: $e');
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -333,142 +364,250 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   }
 
   void _showCommentsDialog(PostModel post) {
+    final commentController = TextEditingController();
+    clearOptimisticComments(); // Reset optimistic comments
+
     showDialog(
       context: context,
       builder: (context) {
-        final commentController = TextEditingController();
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 5,
-          child: Padding(
-            padding: const EdgeInsets.all(AppTheme.paddingMedium),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Comments',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                StreamBuilder<List<CommentModel>>(
-                  stream: _controller.getComments(post.postId),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor));
-                    }
-                    if (snapshot.hasError) {
-                      debugPrint('Error loading comments: ${snapshot.error}');
-                      return Text(
-                        'Error loading comments',
-                        style: GoogleFonts.poppins(color: AppTheme.errorColor),
-                      );
-                    }
-                    final comments = snapshot.data!;
-                    return SizedBox(
-                      height: 200,
-                      child: comments.isEmpty
-                          ? Center(
-                        child: Text(
-                          'No comments yet',
-                          style: GoogleFonts.poppins(fontSize: 16, color: Colors.black54),
-                        ),
-                      )
-                          : ListView.builder(
-                        itemCount: comments.length,
-                        itemBuilder: (context, index) {
-                          final comment = comments[index];
-                          return ListTile(
-                            leading: CircleAvatar(
-                              radius: 16,
-                              backgroundColor: AppTheme.accentColor,
-                              child: Text(
-                                comment.userName.isNotEmpty ? comment.userName[0].toUpperCase() : 'U',
-                                style: GoogleFonts.poppins(color: AppTheme.primaryColor),
+        try {
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 5,
+            backgroundColor: AppTheme.white,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+                minWidth: 280,
+                maxWidth: 400,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.paddingMedium),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Comments',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Flexible(
+                      child: StreamBuilder<List<CommentModel>>(
+                        stream: _controller.getComments(post.postId),
+                        initialData: optimisticComments,
+                        builder: (context, snapshot) {
+                          debugPrint(
+                              'Comments StreamBuilder state: ${snapshot.connectionState}, '
+                                  'hasError: ${snapshot.hasError}, hasData: ${snapshot.hasData}, '
+                                  'error: ${snapshot.error}');
+                          if (snapshot.connectionState == ConnectionState.waiting && optimisticComments.isEmpty) {
+                            return const Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor));
+                          }
+                          if (snapshot.hasError) {
+                            debugPrint('Comments StreamBuilder error: ${snapshot.error}');
+                            String errorMessage = 'Failed to load comments';
+                            if (snapshot.error.toString().contains('permission-denied')) {
+                              errorMessage = 'Permission denied. Try again or check your authentication.';
+                            }
+                            return Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.error_outline, size: 40, color: AppTheme.errorColor),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    errorMessage,
+                                    style: GoogleFonts.poppins(fontSize: 14, color: AppTheme.errorColor),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton(
+                                    onPressed: () => setState(() {}),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.secondaryColor,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    child: Text(
+                                      'Retry',
+                                      style: GoogleFonts.poppins(fontSize: 14, color: AppTheme.white),
+                                    ),
+                                  ),
+                                ],
                               ),
+                            );
+                          }
+                          final comments = [...(snapshot.data ?? []), ...optimisticComments];
+                          debugPrint('Loaded ${comments.length} comments for post: ${post.postId}');
+                          return comments.isEmpty
+                              ? Center(
+                            child: Text(
+                              'No comments yet',
+                              style: GoogleFonts.poppins(fontSize: 16, color: Colors.black54),
                             ),
-                            title: Text(
-                              comment.userName,
-                              style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Text(
-                              comment.commentText,
-                              style: GoogleFonts.poppins(fontSize: 14),
-                            ),
-                            trailing: Text(
-                              _formatTimestamp(comment.timestamp),
-                              style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
-                            ),
+                          )
+                              : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: comments.length,
+                            itemBuilder: (context, index) {
+                              final comment = comments[index];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: AppTheme.accentColor,
+                                  child: Text(
+                                    comment.userName.isNotEmpty ? comment.userName[0].toUpperCase() : 'U',
+                                    style: GoogleFonts.poppins(color: AppTheme.primaryColor),
+                                  ),
+                                ),
+                                title: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ProfileView(
+                                          userId: comment.userId,
+                                          userName: comment.userName,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    comment.userName.isNotEmpty ? comment.userName : 'Anonymous',
+                                    style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  comment.commentText.isNotEmpty ? comment.commentText : 'No comment text',
+                                  style: GoogleFonts.poppins(fontSize: 14),
+                                ),
+                                trailing: Text(
+                                  _formatTimestamp(comment.timestamp),
+                                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: commentController,
-                  decoration: InputDecoration(
-                    hintText: 'Add a comment...',
-                    hintStyle: GoogleFonts.poppins(),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
                     ),
-                    filled: true,
-                    fillColor: AppTheme.accentColor.withOpacity(0.3),
-                    prefixIcon: const Icon(Icons.comment, color: AppTheme.primaryColor),
-                  ),
-                  style: GoogleFonts.poppins(fontSize: 14),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () async {
-                    final text = commentController.text.trim();
-                    if (text.isNotEmpty) {
-                      try {
-                        await _controller.addComment(
-                          post.postId,
-                          text,
-                          FirebaseAuth.instance.currentUser?.displayName ?? 'User',
-                        );
-                        commentController.clear();
-                        Navigator.of(context).pop();
-                      } catch (e) {
-                        debugPrint('Failed to post comment: $e');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Failed to post comment: $e', style: GoogleFonts.poppins()),
-                            backgroundColor: AppTheme.errorColor,
-                          ),
-                        );
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Comment cannot be empty', style: GoogleFonts.poppins()),
-                          backgroundColor: AppTheme.errorColor,
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: commentController,
+                      decoration: InputDecoration(
+                        hintText: 'Add a comment...',
+                        hintStyle: GoogleFonts.poppins(),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: AppTheme.accentColor.withOpacity(0.3),
+                        prefixIcon: const Icon(Icons.comment, color: AppTheme.primaryColor),
+                      ),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                    ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final text = commentController.text.trim();
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user == null) {
+                            debugPrint('No authenticated user');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Please log in to comment', style: GoogleFonts.poppins()),
+                                backgroundColor: AppTheme.errorColor,
+                              ),
+                            );
+                            Navigator.of(context).pop();
+                            Navigator.pushReplacementNamed(context, '/login');
+                            return;
+                          }
+                          if (text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Comment cannot be empty', style: GoogleFonts.poppins()),
+                                backgroundColor: AppTheme.errorColor,
+                              ),
+                            );
+                            return;
+                          }
+                          final commentId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+                          try {
+                            addOptimisticComment(
+                              commentId: commentId,
+                              userId: user.uid,
+                              userName: user.displayName ?? 'User',
+                              commentText: text,
+                            );
+                            await _controller.addComment(
+                              post.postId,
+                              text,
+                              user.displayName ?? 'User',
+                            );
+                            commentController.clear();
+                            removeOptimisticComment(commentId); // This should now be recognized
+                            // Force UI refresh to update comment count
+                            setState(() {});
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Comment posted successfully', style: GoogleFonts.poppins()),
+                                backgroundColor: AppTheme.secondaryColor,
+                              ),
+                            );
+                          } catch (e) {
+                            debugPrint('Failed to post comment: $e');
+                            removeOptimisticComment(commentId); // This should now be recognized
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to post comment: $e', style: GoogleFonts.poppins()),
+                                backgroundColor: AppTheme.errorColor,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.secondaryColor,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                         ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.secondaryColor,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: Text(
-                    'Post Comment',
-                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.white),
-                  ),
+                        child: Text(
+                          'Post Comment',
+                          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.white),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        );
+          );
+        } catch (e) {
+          debugPrint('Error rendering comment dialog: $e');
+          return AlertDialog(
+            title: Text('Error', style: GoogleFonts.poppins()),
+            content: Text('Failed to load comments: $e', style: GoogleFonts.poppins()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('OK', style: GoogleFonts.poppins()),
+              ),
+            ],
+          );
+        }
       },
-    );
+    ).catchError((error) {
+      debugPrint('Dialog error: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to open comments: $error', style: GoogleFonts.poppins()),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    });
   }
 }

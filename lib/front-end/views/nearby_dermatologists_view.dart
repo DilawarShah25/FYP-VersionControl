@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../utils/app_theme.dart';
 
 class NearbyDermatologistsView extends StatefulWidget {
   const NearbyDermatologistsView({super.key});
@@ -14,7 +15,7 @@ class _NearbyDermatologistsViewState extends State<NearbyDermatologistsView> {
   static const String apiKey = "AlzaSydlT3PcvzpVjh2G3km77z4aZcLMR_TBqRB";
   final List<Map<String, dynamic>> _dermatologists = [];
   LatLng? currentPosition;
-  String searchTerm = ""; // Add a variable to store the search term
+  String searchTerm = "";
 
   @override
   void initState() {
@@ -23,7 +24,6 @@ class _NearbyDermatologistsViewState extends State<NearbyDermatologistsView> {
   }
 
   Future<void> _fetchCurrentPosition() async {
-    // Simulate fetching the current location (use a location plugin for real GPS data)
     setState(() {
       currentPosition = const LatLng(37.7749, -122.4194); // Example: San Francisco
     });
@@ -64,55 +64,49 @@ class _NearbyDermatologistsViewState extends State<NearbyDermatologistsView> {
     setState(() {
       searchTerm = value;
     });
-    // Implement search logic here based on searchTerm
-    // You can filter the _dermatologists list based on the search term
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(115.0), // Height of the AppBar
+        preferredSize: const Size.fromHeight(115.0),
         child: AppBar(
-          // backgroundColor: Colors.transparent,
           elevation: 0,
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF004e92),
-                  Color(0xFF000428),
-                ],
+                colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            icon: const Icon(Icons.arrow_back, color: AppTheme.white),
+            onPressed: () => Navigator.pop(context),
           ),
-          title: const Padding(
-            padding: EdgeInsets.only(right: 50.0, top: 15.0),
+          title: Padding(
+            padding: const EdgeInsets.only(right: 50.0, top: 15.0),
             child: Center(
               child: Text(
                 'Nearby Dermatologists',
-                style: TextStyle(
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: AppTheme.white,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 22,
                 ),
               ),
             ),
           ),
           centerTitle: true,
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(100.0), // Increased height for search bar
+            preferredSize: const Size.fromHeight(100.0),
             child: Container(
               width: MediaQuery.of(context).size.width,
               height: 50.0,
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: AppTheme.white,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -122,8 +116,14 @@ class _NearbyDermatologistsViewState extends State<NearbyDermatologistsView> {
                 padding: const EdgeInsets.only(left: 16.0, right: 16.0),
                 child: TextField(
                   onChanged: _onSearch,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.black54,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Search for dermatologists',
+                    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[400],
+                    ),
                     border: InputBorder.none,
                   ),
                 ),
@@ -134,13 +134,17 @@ class _NearbyDermatologistsViewState extends State<NearbyDermatologistsView> {
       ),
       body: currentPosition == null
           ? const Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(
+          color: AppTheme.primaryColor,
+        ),
       )
           : _dermatologists.isEmpty
-          ? const Center(
+          ? Center(
         child: Text(
           'No dermatologists found nearby.',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Colors.grey[600],
+          ),
         ),
       )
           : ListView.builder(
@@ -148,12 +152,29 @@ class _NearbyDermatologistsViewState extends State<NearbyDermatologistsView> {
         itemBuilder: (context, index) {
           final dermatologist = _dermatologists[index];
           return ListTile(
-            leading: const Icon(Icons.local_hospital),
-            title: Text(dermatologist['name']),
-            subtitle: Text(dermatologist['address']),
+            leading: const Icon(
+              Icons.local_hospital,
+              color: AppTheme.primaryColor,
+            ),
+            title: Text(
+              dermatologist['name'],
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle: Text(
+              dermatologist['address'],
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.black54,
+              ),
+            ),
             trailing: Text(
               dermatologist['rating'].toString(),
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           );
         },

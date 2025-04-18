@@ -119,10 +119,10 @@ class CommunityFirebaseService {
         final likes = List<String>.from(post.data()?['likes'] ?? []);
         if (likes.contains(userId)) {
           likes.remove(userId);
-          debugPrint('Removing like for user: $userId');
+          debugPrint('Removing like for user: $userId, new likes count: ${likes.length}');
         } else {
           likes.add(userId);
-          debugPrint('Adding like for user: $userId');
+          debugPrint('Adding like for user: $userId, new likes count: ${likes.length}');
         }
         transaction.update(postRef, {'likes': likes});
       });
@@ -137,7 +137,7 @@ class CommunityFirebaseService {
     final user = _auth.currentUser;
     if (user == null) {
       debugPrint('Error: User not logged in');
-      throw Exception('User not logged in');
+      throw Exception('Please log in to comment');
     }
     final trimmedComment = commentText.trim();
     final trimmedUserName = userName.trim();
@@ -149,16 +149,35 @@ class CommunityFirebaseService {
       debugPrint('Error: User name is empty');
       throw Exception('User name cannot be empty');
     }
+
     try {
-      await _firestore.collection('posts').doc(postId).collection('comments').add({
-        'userId': user.uid,
-        'userName': trimmedUserName,
-        'commentText': trimmedComment,
-        'timestamp': Timestamp.now(),
+      await _firestore.runTransaction((transaction) async {
+        final postRef = _firestore.collection('posts').doc(postId);
+        final post = await transaction.get(postRef);
+        if (!post.exists) {
+          debugPrint('Error: Post not found: $postId');
+          throw Exception('Post not found');
+        }
+
+        final commentRef = _firestore.collection('posts').doc(postId).collection('comments').doc();
+        final commentData = {
+          'userId': user.uid,
+          'userName': trimmedUserName,
+          'commentText': trimmedComment,
+          'timestamp': Timestamp.now(),
+        };
+        transaction.set(commentRef, commentData);
+
+        final comments = List<String>.from(post.data()?['comments'] ?? []);
+        comments.add(commentRef.id);
+        transaction.update(postRef, {'comments': comments});
       });
       debugPrint('Comment added successfully to post: $postId');
     } catch (e) {
       debugPrint('Error adding comment: $e');
+      if (e.toString().contains('PERMISSION_DENIED')) {
+        throw Exception('You do not have permission to comment on this post');
+      }
       throw Exception('Failed to add comment: $e');
     }
   }
@@ -172,12 +191,26 @@ class CommunityFirebaseService {
         .orderBy('timestamp')
         .snapshots()
         .map((snapshot) {
-      debugPrint('Received ${snapshot.docs.length} comments');
-      return snapshot.docs.map((doc) => CommentModel.fromFirestore(doc)).toList();
+      debugPrint('Received ${snapshot.docs.length} comments for post: $postId');
+      return snapshot.docs.map((doc) {
+        debugPrint('Processing comment document: ${doc.id}, data: ${doc.data()}');
+        return CommentModel.fromFirestore(doc);
+      }).toList();
     }).handleError((error) {
       debugPrint('Error fetching comments: $error');
-      throw error;
+      throw Exception('Failed to load comments: $error');
     });
+  }
+
+  Future<Map<String, dynamic>?> getUserProfile(String userId) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+      debugPrint('Fetched user profile for userId: $userId, exists: ${doc.exists}');
+      return doc.exists ? doc.data() : null;
+    } catch (e) {
+      debugPrint('Error fetching user profile: $e');
+      return null;
+    }
   }
 
   Future<void> reportPost(String postId) async {
@@ -202,40 +235,33 @@ class CommunityFirebaseService {
   Future<void> sendMessage(String receiverId, String text) async {
     final user = _auth.currentUser;
     if (user == null) {
-      debugPrint('Error: No authenticated user for sendMessage');
-      throw Exception('No authenticated user');
+      debugPrint('Error: User not logged in');
+      throw Exception('User not logged in');
     }
-    final trimmedText = text.trim();
-    if (trimmedText.isEmpty) {
+    if (text.trim().isEmpty) {
       debugPrint('Error: Message text is empty');
-      throw Exception('Message text cannot be empty');
+      throw Exception('Message cannot be empty');
     }
     if (receiverId.trim().isEmpty) {
       debugPrint('Error: receiverId is empty');
-      throw Exception('receiverId cannot be empty');
+      throw Exception('Receiver ID cannot be empty');
     }
-    // Validate receiverId exists in users collection
-    final userDoc = await _firestore.collection('users').doc(receiverId).get();
-    if (!userDoc.exists) {
-      debugPrint('Error: receiverId $receiverId does not exist in users collection');
-      throw Exception('Invalid recipient ID');
-    }
-    final message = MessageModel(
-      messageId: _firestore.collection('chats').doc().id,
-      senderId: user.uid,
-      receiverId: receiverId,
-      text: trimmedText,
-      timestamp: Timestamp.now(),
-    );
-    debugPrint('Sending message to $receiverId: $text, messageId: ${message.messageId}, senderId: ${user.uid}');
     try {
-      await _firestore.collection('chats').doc(message.messageId).set(message.toFirestore());
-      debugPrint('Message sent successfully: ${message.messageId}');
+      final receiverDoc = await _firestore.collection('users').doc(receiverId).get();
+      if (!receiverDoc.exists) {
+        debugPrint('Error: Receiver $receiverId does not exist');
+        throw Exception('Invalid recipient ID');
+      }
+
+      await _firestore.collection('chats').add({
+        'senderId': user.uid,
+        'receiverId': receiverId,
+        'text': text.trim(),
+        'timestamp': Timestamp.now(),
+      });
+      debugPrint('Message sent successfully to: $receiverId');
     } catch (e) {
       debugPrint('Error sending message: $e');
-      if (e.toString().contains('permission-denied')) {
-        debugPrint('Permission denied when sending message. Check Firestore rules and receiverId: $receiverId');
-      }
       throw Exception('Failed to send message: $e');
     }
   }
@@ -244,136 +270,100 @@ class CommunityFirebaseService {
     final user = _auth.currentUser;
     if (user == null) {
       debugPrint('Error: No authenticated user for getMessages');
-      return Stream.error('No authenticated user');
+      return Stream.value([]); // Return empty stream instead of error
     }
     if (otherUserId.trim().isEmpty) {
       debugPrint('Error: otherUserId is empty');
-      return Stream.error('otherUserId cannot be empty');
+      return Stream.value([]);
     }
-    // Validate otherUserId exists in users collection
-    _firestore.collection('users').doc(otherUserId).get().then((doc) {
-      if (!doc.exists) {
-        debugPrint('Warning: otherUserId $otherUserId does not exist in users collection');
-      } else {
-        debugPrint('Validated otherUserId $otherUserId exists in users collection');
+
+    return _firestore.collection('users').doc(otherUserId).get().asStream().asyncExpand((userDoc) {
+      if (!userDoc.exists) {
+        debugPrint('Error: otherUserId $otherUserId does not exist in users collection');
+        return Stream.value([]);
       }
-    });
-    debugPrint('Fetching messages for user: ${user.uid}, otherUser: $otherUserId');
-    try {
-      final query = _firestore
+      debugPrint('Validated otherUserId $otherUserId exists in users collection');
+
+      final sentMessages = _firestore
           .collection('chats')
-          .where('senderId', whereIn: [user.uid, otherUserId])
-          .where('receiverId', whereIn: [user.uid, otherUserId])
-          .orderBy('timestamp', descending: false);
-      debugPrint('Executing query: collection=chats, senderId in [${user.uid}, $otherUserId], receiverId in [${user.uid}, $otherUserId], orderBy=timestamp');
-      return query.snapshots().map((snapshot) {
-        debugPrint('Received snapshot with ${snapshot.docs.length} documents');
-        if (snapshot.docs.isEmpty) {
-          debugPrint('No messages found for user: ${user.uid}, otherUser: $otherUserId');
-        }
-        return snapshot.docs.map((doc) {
-          try {
-            debugPrint('Processing document: ${doc.id}, data: ${doc.data()}');
-            return MessageModel.fromFirestore(doc);
-          } catch (e) {
-            debugPrint('Error deserializing document ${doc.id}: $e');
-            throw e;
-          }
-        }).toList();
+          .where('senderId', isEqualTo: user.uid)
+          .where('receiverId', isEqualTo: otherUserId)
+          .orderBy('timestamp', descending: false)
+          .snapshots();
+
+      final receivedMessages = _firestore
+          .collection('chats')
+          .where('senderId', isEqualTo: otherUserId)
+          .where('receiverId', isEqualTo: user.uid)
+          .orderBy('timestamp', descending: false)
+          .snapshots();
+
+      return Stream<List<MessageModel>>.multi((controller) {
+        List<MessageModel> messages = [];
+        sentMessages.listen((snapshot) {
+          final sent = snapshot.docs.map((doc) {
+            try {
+              debugPrint('Processing sent document: ${doc.id}, data: ${doc.data()}');
+              return MessageModel.fromFirestore(doc);
+            } catch (e) {
+              debugPrint('Error deserializing sent document ${doc.id}: $e');
+              return null;
+            }
+          }).whereType<MessageModel>().toList();
+          messages = [...messages, ...sent];
+          messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          controller.add(messages);
+          debugPrint('Updated with ${sent.length} sent messages, total: ${messages.length}');
+        }, onError: (error) {
+          debugPrint('Error in sent messages stream: $error');
+          controller.add(messages); // Continue with current messages
+        });
+
+        receivedMessages.listen((snapshot) {
+          final received = snapshot.docs.map((doc) {
+            try {
+              debugPrint('Processing received document: ${doc.id}, data: ${doc.data()}');
+              return MessageModel.fromFirestore(doc);
+            } catch (e) {
+              debugPrint('Error deserializing received document ${doc.id}: $e');
+              return null;
+            }
+          }).whereType<MessageModel>().toList();
+          messages = [...messages, ...received];
+          messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          controller.add(messages);
+          debugPrint('Updated with ${received.length} received messages, total: ${messages.length}');
+        }, onError: (error) {
+          debugPrint('Error in received messages stream: $error');
+          controller.add(messages); // Continue with current messages
+        });
       }).handleError((error) {
         debugPrint('Error in messages stream: $error');
-        if (error.toString().contains('permission-denied')) {
-          debugPrint('Permission denied when fetching messages. Check Firestore rules, user: ${user.uid}, otherUser: $otherUserId');
-        }
-        throw Exception('Failed to load messages: $error');
+        return <MessageModel>[];
       });
-    } catch (e) {
-      debugPrint('Error setting up messages stream: $e');
-      return Stream.error('Failed to load messages: $e');
-    }
+    });
   }
 
-  // Debug method to inspect chats collection
-  Future<void> debugChatsCollection({required String otherUserId}) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      debugPrint('Error: No authenticated user for debugChatsCollection');
-      return;
-    }
+  Future<void> debugChatsCollection({String? otherUserId}) async {
     try {
-      final snapshot = await _firestore.collection('chats').get();
-      debugPrint('Total chats documents: ${snapshot.docs.length}');
+      final user = _auth.currentUser;
+      if (user == null) {
+        debugPrint('Debug: No authenticated user');
+        return;
+      }
+      final query = otherUserId != null
+          ? _firestore
+          .collection('chats')
+          .where('senderId', isEqualTo: user.uid)
+          .where('receiverId', isEqualTo: otherUserId)
+          : _firestore.collection('chats').where('senderId', isEqualTo: user.uid);
+      final snapshot = await query.get();
+      debugPrint('Debug: Found ${snapshot.docs.length} chat documents');
       for (var doc in snapshot.docs) {
-        final data = doc.data();
-        debugPrint('Document ${doc.id}: $data');
-        if (data['senderId'] == user.uid || data['receiverId'] == user.uid) {
-          debugPrint('Accessible document ${doc.id} for user ${user.uid}: $data');
-        }
+        debugPrint('Debug: Chat document ${doc.id}: ${doc.data()}');
       }
     } catch (e) {
-      debugPrint('Error debugging chats collection: $e');
-    }
-  }
-
-  Future<Map<String, dynamic>?> getUserProfile(String userId) async {
-    try {
-      final doc = await _firestore.collection('users').doc(userId).get();
-      if (!doc.exists) {
-        debugPrint('No profile found for user: $userId');
-        return null;
-      }
-      final data = doc.data();
-      if (data?['showContactDetails'] == false && userId != _auth.currentUser?.uid) {
-        return {
-          'name': data?['name'],
-          'image_base64': data?['image_base64'],
-          'role': data?['role'],
-          'showContactDetails': false,
-        };
-      }
-      debugPrint('Fetched user profile for: $userId');
-      return data;
-    } catch (e) {
-      debugPrint('Error fetching user profile: $e');
-      return null;
-    }
-  }
-
-  Future<void> updateUserProfile({
-    required String userId,
-    required String name,
-    required String email,
-    required String phoneCountryCode,
-    required String phoneNumberPart,
-    required String role,
-    String? imageBase64,
-    required bool showContactDetails,
-  }) async {
-    final user = _auth.currentUser;
-    if (user == null || user.uid != userId) {
-      debugPrint('Error: Invalid user for update');
-      throw Exception('User not authorized');
-    }
-    try {
-      final data = {
-        'name': name.trim(),
-        'email': email.trim(),
-        'phoneCountryCode': phoneCountryCode.trim(),
-        'phoneNumberPart': phoneNumberPart.trim(),
-        'role': role.trim(),
-        'image_base64': imageBase64 ?? '',
-        'showContactDetails': showContactDetails,
-        'updatedAt': Timestamp.now(),
-      };
-      debugPrint('Updating user profile: $data');
-      await _firestore.collection('users').doc(userId).set(data, SetOptions(merge: true));
-      await user.updateDisplayName(name.trim());
-      await user.updateEmail(email.trim());
-      if (imageBase64 != null) await user.updatePhotoURL(imageBase64);
-      debugPrint('User profile updated successfully');
-    } catch (e) {
-      debugPrint('Error updating user profile: $e');
-      throw Exception('Failed to update profile: $e');
+      debugPrint('Debug: Error querying chats collection: $e');
     }
   }
 }

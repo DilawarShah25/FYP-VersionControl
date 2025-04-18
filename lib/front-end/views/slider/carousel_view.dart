@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:scalpsense/front-end/Community/view/community_feed_screen.dart';
 import '../dashboard/other_dashboard/blog/blog_view.dart';
-import '../dashboard/other_dashboard/group_chat_screen.dart';
 import '../dashboard/other_dashboard/home_view.dart';
-import '../dashboard/other_dashboard/nearby dermatologist/nearby_dermatologists_view.dart';
+import '../nearby_dermatologists_view.dart';
 
 class Carousel extends StatefulWidget {
   final List<String> images;
@@ -74,7 +74,7 @@ class _CarouselState extends State<Carousel> with SingleTickerProviderStateMixin
       case 2:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const GroupChatScreen(groupId: '')),
+          MaterialPageRoute(builder: (context) => const CommunityFeedScreen()),
         );
         break;
       case 3:

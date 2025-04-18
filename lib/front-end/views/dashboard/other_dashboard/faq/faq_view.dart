@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../utils/app_theme.dart';
 import 'detail_screen.dart';
-import 'faq_dynamic.dart'; // Import the DetailScreen class
+import 'faq_dynamic.dart';
 
-// FaqView displaying the list of FAQ items
 class FaqView extends StatefulWidget {
   const FaqView({super.key});
 
@@ -47,110 +47,113 @@ class _FaqViewState extends State<FaqView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70.0), // height of the AppBar
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF004e92),
-                  Color(0xFF000428),
-                ],
-              ),
-            ),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          title: const Padding(
-            padding: EdgeInsets.only(right: 50.0, top: 12.0),
-            child: Center(
-              child: Text(
-                'FAQ',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 36,
-                ),
-              ),
-            ),
-          ),
-          centerTitle: true,
-        ),
-      ),
-      body: SafeArea(
-        child: Container(
+      backgroundColor: AppTheme.backgroundColor,
+      appBar: _buildAppBar(context),
+      body: _buildBody(context),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(70.0),
+      child: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF004e92),
-                Color(0xFF000428),
-              ],
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
-          child: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, -4),
-                      ),
-                    ],
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'FAQ',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppTheme.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppTheme.primaryColor, AppTheme.accentColor],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 20),
-                        // Dynamic FAQ Containers
-                        for (var faq in faqData)
-                          DynamicContainer(
-                            title: faq['title']!,
-                            description: faq['description']!,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return DetailScreen(
-                                      title: faq['title']!,
-                                      content: _getContentForBlog(faq['destination']!),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                      ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -4),
                     ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.paddingMedium,
+                    vertical: AppTheme.paddingLarge,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: faqData
+                        .map((faq) => _buildFaqItem(context, faq))
+                        .toList(),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // Method to get content based on the destination
+  Widget _buildFaqItem(BuildContext context, Map<String, String> faq) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.paddingMedium),
+      child: DynamicContainer(
+        title: faq['title']!,
+        description: faq['description']!,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailScreen(
+                title: faq['title']!,
+                content: _getContentForBlog(faq['destination']!),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   String _getContentForBlog(String destination) {
     switch (destination) {
       case 'DetailScreen1':
