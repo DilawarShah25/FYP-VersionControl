@@ -1,184 +1,124 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io';
-
-import '../utils/image_utils.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<Map<String, dynamic>> registerWithEmailAndPassword({
+  Future<Map<String, String?>> registerWithEmailAndPassword({
     required String name,
     required String email,
     required String password,
     required String phoneCountryCode,
     required String phoneNumberPart,
     required String role,
-    File? profileImage,
   }) async {
     try {
-      print('Starting registration for: $email');
+      // Validate inputs
+      if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
+        print('Validation failed: Invalid email format');
+        return {'error': 'Invalid email format'};
+      }
+      if (!RegExp(r'^[1-9][0-9]{5,11}$').hasMatch(phoneNumberPart)) {
+        print('Validation failed: Phone number must be 6-12 digits, no leading 0');
+        return {'error': 'Phone number must be 6-12 digits, no leading 0'};
+      }
+      if (!RegExp(r'^\+[1-9][0-9]{0,3}$').hasMatch(phoneCountryCode)) {
+        print('Validation failed: Invalid country code');
+        return {'error': 'Invalid country code'};
+      }
+      if (name.length < 2) {
+        print('Validation failed: Name must be at least 2 characters');
+        return {'error': 'Name must be at least 2 characters'};
+      }
+      if (!['User', 'Admin'].contains(role)) {
+        print('Validation failed: Invalid role');
+        return {'error': 'Invalid role'};
+      }
+
+      // Create user in Firebase Authentication
+      print('Creating Firebase Auth user for $email');
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim(),
+        email: email,
         password: password,
       );
-
       User? user = userCredential.user;
+
       if (user == null) {
-        print('❌ User creation failed: No user returned');
-        return {'error': 'User creation failed', 'image_base64': '', 'uid': null};
+        print('Failed to create user: No user returned');
+        return {'error': 'Failed to create user'};
       }
 
-      print('User created: ${user.uid}. Sending verification email...');
+      // Send verification email
+      print('Sending verification email to $email');
       await user.sendEmailVerification();
 
-      String uid = user.uid;
-      String imageBase64 = '';
-
-      if (profileImage != null) {
-        print('Converting profile image to base64 for: $uid');
-        imageBase64 = await ImageUtils.convertImageToBase64(profileImage) ?? '';
-        if (imageBase64.isEmpty) {
-          print('❌ Image conversion failed');
-          await user.delete();
-          return {'error': 'Image conversion failed', 'image_base64': '', 'uid': null};
-        }
-      }
-
-      Map<String, dynamic> userData = {
-        'name': name.trim(),
-        'email': email.trim(),
+      // Prepare user document
+      final phone = phoneCountryCode + phoneNumberPart;
+      final now = Timestamp.now();
+      final userDoc = {
+        'name': name,
+        'email': email,
         'role': role,
         'phoneCountryCode': phoneCountryCode,
         'phoneNumberPart': phoneNumberPart,
-        'image_base64': imageBase64,
-        'uid': uid,
-        'createdAt': FieldValue.serverTimestamp(),
+        'phone': phone,
+        'uid': user.uid,
+        'createdAt': now,
         'isEmailVerified': false,
-        'lastLogin': FieldValue.serverTimestamp(),
-        'lastVerificationSent': FieldValue.serverTimestamp(),
+        'lastLogin': now,
+        'lastVerificationSent': now,
+        'profileImageUrl': null,
       };
 
-      print('Saving user data to Firestore: $uid');
-      await _firestore.collection('users').doc(uid).set(userData);
-      print('✅ Registration successful for: $email');
-      return {'error': null, 'image_base64': imageBase64, 'uid': uid};
-    } on FirebaseAuthException catch (e) {
+      print('Saving user document for UID: ${user.uid}');
+      print('User document content: $userDoc');
+
+      // Save user document to Firestore
+      await _firestore.collection('users').doc(user.uid).set(userDoc);
+
+      print('User document saved successfully');
+      return {'error': null};
+    } catch (e) {
+      print('Registration error: $e');
       String errorMessage;
-      switch (e.code) {
-        case 'email-already-in-use':
-          errorMessage = 'This email is already registered.';
-          break;
-        case 'invalid-email':
-          errorMessage = 'Invalid email format.';
-          break;
-        case 'weak-password':
-          errorMessage = 'Password is too weak.';
-          break;
-        default:
-          errorMessage = 'Registration failed: ${e.message}';
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'email-already-in-use':
+            errorMessage = 'This email is already registered.';
+            break;
+          case 'invalid-email':
+            errorMessage = 'Invalid email format.';
+            break;
+          case 'weak-password':
+            errorMessage = 'Password is too weak.';
+            break;
+          default:
+            errorMessage = 'Authentication error: ${e.message}';
+        }
+      } else if (e is FirebaseException && e.code == 'permission-denied') {
+        errorMessage = 'Permission denied: Check user document fields and security rules.';
+      } else {
+        errorMessage = 'Unexpected error: ${e.toString()}';
       }
-      print('❌ Registration error: $errorMessage');
-      return {'error': errorMessage, 'image_base64': '', 'uid': null};
-    } catch (e) {
-      print('❌ Unexpected registration error: $e');
-      return {'error': 'Unexpected error: $e', 'image_base64': '', 'uid': null};
+      return {'error': errorMessage};
     }
   }
-
-  Future<Map<String, dynamic>> signInWithEmailAndPassword(String email, String password) async {
-    try {
-      print('Attempting login for: $email');
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      );
-
-      User? user = userCredential.user;
-      if (user == null) {
-        print('❌ Login failed: No user returned');
-        return {'error': 'Login failed', 'user': null};
-      }
-
-      if (!user.emailVerified) {
-        print('❌ Email not verified for: $email');
-        await _auth.signOut();
-        return {'error': 'Please verify your email first.', 'user': null};
-      }
-
-      print('Updating last login for: $email');
-      await _firestore.collection('users').doc(user.uid).update({
-        'lastLogin': FieldValue.serverTimestamp(),
-      });
-
-      print('✅ Login successful for: $email');
-      return {'error': null, 'user': user};
-    } on FirebaseAuthException catch (e) {
-      String errorMessage;
-      switch (e.code) {
-        case 'user-not-found':
-          errorMessage = 'No account found with this email.';
-          break;
-        case 'wrong-password':
-          errorMessage = 'Incorrect password.';
-          break;
-        case 'invalid-email':
-          errorMessage = 'Invalid email format.';
-          break;
-        default:
-          errorMessage = 'Login failed: ${e.message}';
-      }
-      print('❌ Login error: $errorMessage');
-      return {'error': errorMessage, 'user': null};
-    } catch (e) {
-      print('❌ Unexpected login error: $e');
-      return {'error': 'Unexpected error: $e', 'user': null};
-    }
-  }
-
-  Future<void> signOut() async {
-    try {
-      print('Signing out user');
-      await _auth.signOut();
-      print('✅ Sign out successful');
-    } catch (e) {
-      print('❌ Sign out error: $e');
-      throw Exception('Sign out failed: $e');
-    }
-  }
-
-  User? getCurrentUser() {
-    final user = _auth.currentUser;
-    print('Current user: ${user?.email ?? "None"}');
-    return user;
-  }
-
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   Future<bool> isEmailVerified() async {
     try {
-      User? user = _auth.currentUser;
-      if (user == null) {
-        print('❌ No user signed in');
-        return false;
-      }
-
-      await user.reload();
-      user = _auth.currentUser;
-
-      if (user != null && user.emailVerified) {
-        print('✅ Email verified for: ${user.email}');
-        await _firestore.collection('users').doc(user.uid).update({
+      await _auth.currentUser?.reload();
+      bool verified = _auth.currentUser?.emailVerified ?? false;
+      print('Email verification status: $verified');
+      if (verified) {
+        await _firestore.collection('users').doc(_auth.currentUser?.uid).update({
           'isEmailVerified': true,
-          'emailVerifiedAt': FieldValue.serverTimestamp(),
+          'emailVerifiedAt': Timestamp.now(),
         });
-        return true;
       }
-      print('Email not verified for: ${user?.email}');
-      return false;
+      return verified;
     } catch (e) {
-      print('❌ Error checking email verification: $e');
+      print('Error checking email verification: $e');
       return false;
     }
   }
@@ -186,76 +126,69 @@ class AuthService {
   Future<String?> resendVerificationEmail() async {
     try {
       User? user = _auth.currentUser;
-      if (user == null) {
-        print('❌ No user signed in');
-        return 'No user signed in.';
+      if (user != null && !user.emailVerified) {
+        print('Resending verification email to ${user.email}');
+        await user.sendEmailVerification();
+        await _firestore.collection('users').doc(user.uid).update({
+          'lastVerificationSent': Timestamp.now(),
+        });
+        return null;
       }
-      if (user.emailVerified) {
-        print('✅ Email already verified for: ${user.email}');
-        return 'Email already verified.';
-      }
-
-      DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
-      if (!doc.exists) {
-        print('❌ User data not found in Firestore');
-        return 'User data not found.';
-      }
-
-      final lastSent = (doc.data() as Map<String, dynamic>)['lastVerificationSent'] as Timestamp?;
-      if (lastSent != null && DateTime.now().difference(lastSent.toDate()).inSeconds < 30) {
-        print('⏳ Rate limit: Wait before resending verification email');
-        return 'Please wait 30 seconds before resending.';
-      }
-
-      print('Resending verification email to: ${user.email}');
-      await user.sendEmailVerification();
-      await _firestore.collection('users').doc(user.uid).update({
-        'lastVerificationSent': FieldValue.serverTimestamp(),
-      });
-      print('✅ Verification email resent');
-      return null;
+      return 'User is already verified or not logged in.';
     } catch (e) {
-      print('❌ Error resending verification email: $e');
-      return 'Error resending email: $e';
+      print('Error resending verification email: $e');
+      return 'Failed to resend verification email: ${e.toString()}';
+    }
+  }
+
+  Future<Map<String, String?>> signInWithEmailAndPassword(String email, String password) async {
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      User? user = userCredential.user;
+
+      if (user == null) {
+        return {'error': 'Failed to sign in'};
+      }
+
+      if (!user.emailVerified) {
+        return {'error': 'Please verify your email first.'};
+      }
+
+      return {'error': null};
+    } catch (e) {
+      print('Sign-in error: $e');
+      String errorMessage;
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'user-not-found':
+            errorMessage = 'No user found with this email.';
+            break;
+          case 'wrong-password':
+            errorMessage = 'Incorrect password.';
+            break;
+          case 'invalid-email':
+            errorMessage = 'Invalid email format.';
+            break;
+          default:
+            errorMessage = 'Sign-in failed: ${e.message}';
+        }
+      } else {
+        errorMessage = 'An unexpected error occurred.';
+      }
+      return {'error': errorMessage};
     }
   }
 
   Future<String?> resetPassword(String email) async {
     try {
-      print('Sending password reset email to: $email');
-      await _auth.sendPasswordResetEmail(email: email.trim());
-      print('✅ Password reset email sent');
+      await _auth.sendPasswordResetEmail(email: email);
       return null;
     } catch (e) {
-      print('❌ Error sending password reset email: $e');
-      return 'Error sending password reset email: $e';
-    }
-  }
-
-  Future<Map<String, dynamic>> getUserData(String uid) async {
-    try {
-      DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
-      if (doc.exists) {
-        print('✅ User data fetched for: $uid');
-        return doc.data() as Map<String, dynamic>;
-      }
-      print('❌ User data not found for: $uid');
-      return {'error': 'User data not found'};
-    } catch (e) {
-      print('❌ Error fetching user data: $e');
-      return {'error': 'Error fetching user data: $e'};
-    }
-  }
-
-  Future<String?> updateUserData(String uid, Map<String, dynamic> data) async {
-    try {
-      print('Updating user data for: $uid');
-      await _firestore.collection('users').doc(uid).update(data);
-      print('✅ User data updated successfully');
-      return null;
-    } catch (e) {
-      print('❌ Error updating user data: $e');
-      return 'Error updating user data: $e';
+      print('Password reset error: $e');
+      return 'Failed to send password reset email.';
     }
   }
 }

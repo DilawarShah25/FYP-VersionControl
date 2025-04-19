@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,6 +27,95 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
+  Future<String?> _fetchUserNameFromFirestore(String uid) async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return doc.data()?['name']?.toString().trim();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching user name from Firestore: $e');
+      return null;
+    }
+  }
+
+  Future<void> _updateUserProfileName(String name, String uid) async {
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'name': name,
+        'email': FirebaseAuth.instance.currentUser?.email ?? '',
+        'role': 'User',
+        'showContactDetails': true,
+        'updated_at': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      debugPrint('User profile name updated in Firestore: $name');
+    } catch (e) {
+      debugPrint('Failed to update user profile name: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update name: $e', style: GoogleFonts.poppins()),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+      throw e;
+    }
+  }
+
+  Future<bool> _promptForName() async {
+    final nameController = TextEditingController();
+    bool nameSet = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Set Your Name', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: nameController,
+            decoration: InputDecoration(
+              hintText: 'Enter your full name',
+              hintStyle: GoogleFonts.poppins(),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            style: GoogleFonts.poppins(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: GoogleFonts.poppins(color: AppTheme.primaryColor)),
+            ),
+            TextButton(
+              onPressed: () async {
+                final name = nameController.text.trim();
+                if (name.isNotEmpty) {
+                  try {
+                    await _updateUserProfileName(name, FirebaseAuth.instance.currentUser!.uid);
+                    nameSet = true;
+                    Navigator.pop(context);
+                  } catch (e) {
+                    // Error handling is done in _updateUserProfileName
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Please enter a valid name', style: GoogleFonts.poppins()),
+                      backgroundColor: AppTheme.errorColor,
+                    ),
+                  );
+                }
+              },
+              child: Text('Save', style: GoogleFonts.poppins(color: AppTheme.primaryColor)),
+            ),
+          ],
+        );
+      },
+    );
+
+    return nameSet;
+  }
+
   Future<void> _submitPost() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -33,8 +123,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       Navigator.pushReplacementNamed(context, '/login');
       return;
     }
+
     final trimmedText = _textController.text.trim();
-    final userName = user.displayName?.trim() ?? '';
+    String? userName = await _fetchUserNameFromFirestore(user.uid);
+
     if (trimmedText.isEmpty && _image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -44,15 +136,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       );
       return;
     }
-    if (userName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please set your name in profile', style: GoogleFonts.poppins()),
-          backgroundColor: AppTheme.errorColor,
-        ),
-      );
-      return;
+
+    if (userName == null || userName.isEmpty) {
+      bool nameSet = await _promptForName();
+      if (!nameSet) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please set your name in profile to create a post', style: GoogleFonts.poppins()),
+            backgroundColor: AppTheme.errorColor,
+            action: SnackBarAction(
+              label: 'Go to Profile',
+              onPressed: () {
+                Navigator.pushNamed(context, '/profile');
+              },
+            ),
+          ),
+        );
+        return;
+      }
+      userName = await _fetchUserNameFromFirestore(user.uid) ?? '';
     }
+
     try {
       await _controller.createPost(
         textContent: trimmedText.isEmpty ? ' ' : trimmedText,
@@ -81,22 +185,31 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: Text('Create Post', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold)),
-        backgroundColor: AppTheme.primaryColor,
-        actions: [
-          TextButton(
-            onPressed: _submitPost,
-            child: Text(
-              'Post',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: AppTheme.white,
-                fontWeight: FontWeight.w600,
-              ),
+        title: Text(
+          'Create Post',
+          style: GoogleFonts.poppins(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.white,
+          ),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
-        ],
+        ),
+        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppTheme.paddingMedium),
@@ -107,18 +220,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               TextField(
                 controller: _textController,
                 maxLines: 5,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'What’s on your mind?',
-                  hintStyle: GoogleFonts.poppins(),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
-                style: GoogleFonts.poppins(fontSize: 14),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.paddingMedium),
               if (_image != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
@@ -133,20 +240,34 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     },
                   ),
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.paddingMedium),
               ElevatedButton.icon(
                 onPressed: _pickImage,
                 icon: const Icon(Icons.image, color: AppTheme.white),
-                label: Text(
-                  'Add Image',
-                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                label: const Text('Add Image'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: AppTheme.white,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  textStyle: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(height: AppTheme.paddingMedium),
+              ElevatedButton.icon(
+                onPressed: _submitPost,
+                icon: const Icon(Icons.publish, color: AppTheme.white),
+                label: const Text('Post'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: AppTheme.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ],

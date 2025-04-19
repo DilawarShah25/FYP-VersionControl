@@ -154,7 +154,6 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     final phoneNumberPart = _phoneNumberPartController.text.trim();
     final role = _roleController.text.trim();
 
-    // Fetch current Firestore data to compare
     final currentData = await _service.getUserProfile(_uid!);
     if (currentData == null) {
       _showSnackBar('Current user data not found.');
@@ -162,10 +161,8 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       return;
     }
 
-    // Map to store only changed fields
     final Map<String, dynamic> updates = {};
 
-    // Check for changes in each field
     if (name != (currentData['name'] ?? '') && name.isNotEmpty) {
       if (name.isEmpty) {
         _showSnackBar('Please enter your full name');
@@ -204,7 +201,6 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       updates['showContactDetails'] = _showContactDetails;
     }
 
-    // Handle image update
     String? newImageBase64 = _imageBase64;
     if (_profileImage != null) {
       if (!await _profileImage!.exists()) {
@@ -214,6 +210,10 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
         return;
       }
       final imageBytes = await _profileImage!.readAsBytes();
+      if (imageBytes.length > 1024 * 1024) {
+        _showSnackBar('Image size exceeds 1MB.');
+        return;
+      }
       newImageBase64 = base64Encode(imageBytes);
       if (newImageBase64 != _imageBase64) {
         updates['image_base64'] = newImageBase64;
@@ -221,7 +221,6 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
       }
     }
 
-    // If no changes detected, show message and exit
     if (updates.isEmpty) {
       _showSnackBar('No changes to save.');
       setState(() => _isEditing = false);
@@ -230,8 +229,13 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
     setState(() => _isLoading = true);
     try {
-      // Update only the changed fields in Firestore
       await FirebaseFirestore.instance.collection('users').doc(_uid).update(updates);
+      await _service.createUserProfile(
+        userId: _uid!,
+        name: name.isNotEmpty ? name : currentData['name'] ?? 'Anonymous',
+        imageBase64: _showContactDetails ? newImageBase64 : null,
+        showContactDetails: _showContactDetails,
+      );
 
       setState(() {
         _isEditing = false;
@@ -363,7 +367,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
     if (_profileImage != null && _profileImage!.existsSync()) {
       return FileImage(_profileImage!);
     }
-    if (_imageBase64 != null && _imageBase64!.isNotEmpty) {
+    if (_imageBase64 != null && _imageBase64!.isNotEmpty && _showContactDetails) {
       try {
         return MemoryImage(base64Decode(_imageBase64!));
       } catch (e) {
@@ -376,7 +380,7 @@ class _ProfileViewState extends State<ProfileView> with SingleTickerProviderStat
 
   void _zoomImage() {
     final provider = _buildImageProvider();
-    if (provider != null) {
+    if (provider != null && _showContactDetails) {
       showDialog(
         context: context,
         builder: (context) => Dialog(

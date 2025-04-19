@@ -1,15 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/comment_model.dart';
 import '../models/post_model.dart';
-import '../models/message_model.dart';
 import '../services/community_firebase_service.dart';
 
 class CommunityController {
   final CommunityFirebaseService _service = CommunityFirebaseService();
 
-  // Public getter for service to allow access in CommunityFeedScreen
   CommunityFirebaseService get service => _service;
 
   Future<void> createPost({
@@ -101,44 +98,6 @@ class CommunityController {
       debugPrint('Post reported successfully');
     } catch (e) {
       debugPrint('Error reporting post: $e');
-      throw e;
-    }
-  }
-
-  Stream<List<MessageModel>> getMessages(String otherUserId) {
-    if (otherUserId.trim().isEmpty) {
-      debugPrint('Error: otherUserId cannot be empty');
-      return Stream.error('otherUserId cannot be empty');
-    }
-    debugPrint('Controller fetching messages for otherUserId: $otherUserId');
-    return _service.getMessages(otherUserId).handleError((error) {
-      debugPrint('Controller error fetching messages: $error');
-      if (error.toString().contains('permission-denied')) {
-        debugPrint('Controller permission denied for messages. Check Firestore rules or otherUserId: $otherUserId');
-        return <MessageModel>[]; // Return empty list to avoid breaking StreamBuilder
-      }
-      throw error;
-    });
-  }
-
-  Future<void> sendMessage(String otherUserId, String text) async {
-    if (otherUserId.trim().isEmpty) {
-      debugPrint('Error: otherUserId cannot be empty');
-      throw Exception('otherUserId cannot be empty');
-    }
-    if (text.trim().isEmpty) {
-      debugPrint('Error: Message text cannot be empty');
-      throw Exception('Message text cannot be empty');
-    }
-    debugPrint('Controller sending message to otherUserId: $otherUserId, text: $text');
-    try {
-      await _service.sendMessage(otherUserId, text);
-      debugPrint('Controller message sent successfully');
-    } catch (e) {
-      debugPrint('Controller error sending message: $e');
-      if (e.toString().contains('permission-denied')) {
-        debugPrint('Controller permission denied when sending message. Check Firestore rules or otherUserId: $otherUserId');
-      }
       throw e;
     }
   }

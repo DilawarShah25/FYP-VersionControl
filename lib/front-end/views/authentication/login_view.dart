@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:scalpsense/front-end/views/authentication/sign_up.dart';
-import '../../controllers/screen_navigation_controller.dart';
 import '../../controllers/session_controller.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_theme.dart';

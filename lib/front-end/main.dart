@@ -28,6 +28,8 @@ void main() async {
         persistenceEnabled: true,
         cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
       );
+      // Set Firebase Authentication persistence to LOCAL
+      await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
       debugPrint('Firebase initialized successfully on attempt ${retryCount + 1}');
       firebaseInitialized = true;
     } catch (e) {
@@ -104,12 +106,24 @@ class SplashView extends StatelessWidget {
           );
         }
 
-        // Check session validity
+        // Check session validity with token refresh
         return FutureBuilder<bool>(
-          future: sessionController.isSessionValid(),
+          future: _validateSessionWithTokenRefresh(sessionController, snapshot.data!),
           builder: (context, sessionSnapshot) {
             if (sessionSnapshot.connectionState == ConnectionState.waiting) {
               debugPrint('SplashView: Waiting for session validation');
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor)),
+              );
+            }
+
+            if (sessionSnapshot.hasError) {
+              debugPrint('SplashView: Session validation error: ${sessionSnapshot.error}');
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                FirebaseAuth.instance.signOut();
+                sessionController.clearSession();
+                Navigator.pushReplacementNamed(context, '/login');
+              });
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor)),
               );
@@ -134,5 +148,23 @@ class SplashView extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<bool> _validateSessionWithTokenRefresh(SessionController sessionController, User user) async {
+    try {
+      // Attempt to refresh the user's token
+      await user.getIdToken(true);
+      debugPrint('Token refreshed successfully for user: ${user.uid}');
+      // Validate the session
+      bool isValid = await sessionController.isSessionValid();
+      if (!isValid) {
+        debugPrint('Session validation failed after token refresh for user: ${user.uid}');
+        return false;
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Error during token refresh or session validation: $e');
+      return false;
+    }
   }
 }

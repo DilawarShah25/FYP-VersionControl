@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import '../../controllers/session_controller.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_theme.dart';
-import '../../utils/image_utils.dart';
 import 'verification_view.dart';
-import 'dart:io';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -26,7 +23,6 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   final _confirmPasswordController = TextEditingController();
   final _phoneNumberPartController = TextEditingController();
 
-  File? _profileImage;
   String? _errorMessage;
   String? _phoneCountryCode;
   String _selectedRole = 'User';
@@ -58,55 +54,14 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(AppTheme.paddingMedium),
-        decoration: BoxDecoration(
-          color: AppTheme.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Choose Image Source',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: AppTheme.paddingMedium),
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppTheme.primaryColor),
-              title: const Text('Camera'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: AppTheme.primaryColor),
-              title: const Text('Gallery'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (source != null) {
-      final image = await ImageUtils.pickImage(source);
-      if (image != null) {
-        setState(() {
-          _profileImage = image;
-          _errorMessage = null;
-        });
-      } else {
-        setState(() {
-          _errorMessage = 'Failed to pick image. Try another source.';
-        });
-      }
-    }
-  }
-
   Future<void> _register() async {
-    if (_isLoading || !_formKey.currentState!.validate()) return;
+    if (_isLoading || !_formKey.currentState!.validate()) {
+      debugPrint('Form validation failed or already loading');
+      setState(() {
+        _errorMessage = 'Please fill all fields correctly.';
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -124,34 +79,55 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
         _isLoading = false;
         _errorMessage = 'Please select a country code.';
       });
+      debugPrint('Error: No country code selected');
       return;
     }
 
     debugPrint('Initiating registration for: $email');
-    final result = await _authService.registerWithEmailAndPassword(
-      name: name,
-      email: email,
-      password: password,
-      phoneCountryCode: phoneCountryCode,
-      phoneNumberPart: phoneNumberPart,
-      role: _selectedRole,
-      profileImage: _profileImage,
-    );
+    debugPrint('Input parameters: name=$name, email=$email, phone=$phoneCountryCode$phoneNumberPart, role=$_selectedRole');
 
-    setState(() => _isLoading = false);
-
-    if (result['error'] == null) {
-      await _sessionController.saveLastLogin();
-      debugPrint('Registration successful, session saved, navigating to VerificationView');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => VerificationView(email: email)),
+    try {
+      final result = await _authService.registerWithEmailAndPassword(
+        name: name,
+        email: email,
+        password: password,
+        phoneCountryCode: phoneCountryCode,
+        phoneNumberPart: phoneNumberPart,
+        role: _selectedRole,
       );
-    } else {
+
+      debugPrint('Registration result: $result');
+
+      setState(() => _isLoading = false);
+
+      if (result['error'] == null) {
+        await _sessionController.saveLastLogin();
+        debugPrint('Registration successful, session saved, navigating to VerificationView');
+        try {
+          await Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => VerificationView(email: email)),
+          );
+          debugPrint('Navigation to VerificationView completed');
+        } catch (e) {
+          debugPrint('Navigation error: $e');
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Failed to navigate to verification screen: ${e.toString()}';
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = result['error'] ?? 'Unknown registration error';
+        });
+        debugPrint('Registration failed: $_errorMessage');
+      }
+    } catch (e) {
       setState(() {
-        _errorMessage = result['error'];
+        _isLoading = false;
+        _errorMessage = 'Unexpected error during registration: ${e.toString()}';
       });
-      debugPrint('Registration failed: $_errorMessage');
+      debugPrint('Unexpected error in _register: $e');
     }
   }
 
@@ -161,15 +137,13 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
       data: AppTheme.theme,
       child: Scaffold(
         body: SafeArea(
-          child: SingleChildScrollView(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  _buildForm(),
-                ],
-              ),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(child: _buildForm()),
+              ],
             ),
           ),
         ),
@@ -179,7 +153,10 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.paddingLarge),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppTheme.paddingLarge,
+        horizontal: AppTheme.paddingMedium,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppTheme.primaryColor, AppTheme.secondaryColor.withOpacity(0.8)],
@@ -189,28 +166,6 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
       ),
       child: Column(
         children: [
-          GestureDetector(
-            onTap: _pickImage,
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: AppTheme.accentColor,
-              backgroundImage: _profileImage != null
-                  ? FileImage(_profileImage!)
-                  : const AssetImage('assets/placeholder.png') as ImageProvider,
-              child: Align(
-                alignment: Alignment.bottomRight,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.secondaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.camera_alt, size: 20, color: AppTheme.white),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppTheme.paddingMedium),
           Text(
             'Create Account',
             style: GoogleFonts.poppins(
@@ -234,11 +189,11 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
 
   Widget _buildForm() {
     return Card(
-      margin: const EdgeInsets.all(AppTheme.paddingMedium),
+      margin: const EdgeInsets.all(AppTheme.paddingSmall),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.paddingLarge),
+        padding: const EdgeInsets.all(AppTheme.paddingMedium),
         child: Form(
           key: _formKey,
           child: Column(
@@ -255,10 +210,18 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   filled: true,
                   fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
-                style: GoogleFonts.poppins(fontSize: 16),
-                validator: (value) => value!.trim().isEmpty ? 'Enter your name' : null,
+                style: GoogleFonts.poppins(fontSize: 14),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Enter your name';
+                  }
+                  if (value.trim().length < 2) {
+                    return 'Name must be 2+ chars';
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: AppTheme.paddingMedium),
+              const SizedBox(height: AppTheme.paddingSmall),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -271,16 +234,18 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
                 keyboardType: TextInputType.emailAddress,
-                style: GoogleFonts.poppins(fontSize: 16),
+                style: GoogleFonts.poppins(fontSize: 14),
                 validator: (value) {
-                  if (value!.trim().isEmpty) return 'Enter your email';
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Enter your email';
+                  }
                   if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
-                    return 'Enter a valid email (e.g., user@domain.com)';
+                    return 'Enter a valid email';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: AppTheme.paddingMedium),
+              const SizedBox(height: AppTheme.paddingSmall),
               IntlPhoneField(
                 controller: _phoneNumberPartController,
                 decoration: InputDecoration(
@@ -292,20 +257,22 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
                 initialCountryCode: 'US',
-                style: GoogleFonts.poppins(fontSize: 16),
+                style: GoogleFonts.poppins(fontSize: 14),
                 onCountryChanged: (country) {
                   setState(() => _phoneCountryCode = '+${country.dialCode}');
                 },
                 validator: (phone) {
-                  if (phone == null || phone.number.isEmpty) return 'Enter a phone number';
+                  if (phone == null || phone.number.isEmpty) {
+                    return 'Enter a phone number';
+                  }
                   final number = phone.number;
-                  if (number.length < 6 || number.length > 12 || number.startsWith('0')) {
-                    return 'Enter a valid phone number (6-12 digits, no leading 0)';
+                  if (!RegExp(r'^[1-9][0-9]{5,11}$').hasMatch(number)) {
+                    return '6-12 digits, no leading 0';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: AppTheme.paddingMedium),
+              const SizedBox(height: AppTheme.paddingSmall),
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
@@ -322,16 +289,18 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
                 obscureText: !_showPassword,
-                style: GoogleFonts.poppins(fontSize: 16),
+                style: GoogleFonts.poppins(fontSize: 14),
                 validator: (value) {
-                  if (value!.isEmpty) return 'Enter a password';
+                  if (value == null || value.isEmpty) {
+                    return 'Enter a password';
+                  }
                   if (value.length < 6 || !RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
-                    return 'Password must be 6+ chars with a special char';
+                    return '6+ chars with a special char';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: AppTheme.paddingMedium),
+              const SizedBox(height: AppTheme.paddingSmall),
               TextFormField(
                 controller: _confirmPasswordController,
                 decoration: InputDecoration(
@@ -348,21 +317,25 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   fillColor: AppTheme.accentColor.withOpacity(0.3),
                 ),
                 obscureText: !_showConfirmPassword,
-                style: GoogleFonts.poppins(fontSize: 16),
+                style: GoogleFonts.poppins(fontSize: 14),
                 validator: (value) {
-                  if (value!.isEmpty) return 'Confirm your password';
-                  if (value != _passwordController.text) return 'Passwords do not match';
+                  if (value == null || value.isEmpty) {
+                    return 'Confirm your password';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Passwords do not match';
+                  }
                   return null;
                 },
               ),
-              const SizedBox(height: AppTheme.paddingMedium),
+              const SizedBox(height: AppTheme.paddingSmall),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: ['User', 'Admin'].map((role) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppTheme.paddingSmall),
                     child: ChoiceChip(
-                      label: Text(role, style: GoogleFonts.poppins(fontSize: 16)),
+                      label: Text(role, style: GoogleFonts.poppins(fontSize: 14)),
                       selected: _selectedRole == role,
                       onSelected: (selected) => setState(() => _selectedRole = role),
                       selectedColor: AppTheme.secondaryColor,
@@ -374,14 +347,14 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
               ),
               if (_errorMessage != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: AppTheme.paddingMedium),
+                  padding: const EdgeInsets.only(top: AppTheme.paddingSmall),
                   child: Text(
                     _errorMessage!,
-                    style: GoogleFonts.poppins(fontSize: 14, color: AppTheme.errorColor),
+                    style: GoogleFonts.poppins(fontSize: 12, color: AppTheme.errorColor),
                     textAlign: TextAlign.center,
                   ),
                 ),
-              const SizedBox(height: AppTheme.paddingLarge),
+              const SizedBox(height: AppTheme.paddingMedium),
               _isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor))
                   : ElevatedButton(
@@ -389,23 +362,31 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.secondaryColor,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: Text(
                   'Register',
-                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.white),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.white,
+                  ),
                 ),
               ),
-              const SizedBox(height: AppTheme.paddingMedium),
+              const SizedBox(height: AppTheme.paddingSmall),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Already have an account? ', style: GoogleFonts.poppins(fontSize: 14)),
+                  Text('Already have an account? ', style: GoogleFonts.poppins(fontSize: 12)),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       'Login',
-                      style: GoogleFonts.poppins(fontSize: 14, color: AppTheme.primaryColor, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
