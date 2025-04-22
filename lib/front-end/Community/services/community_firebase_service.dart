@@ -26,6 +26,31 @@ class CommunityFirebaseService {
     if (trimmedName.isEmpty) throw Exception('Name cannot be empty');
     if (userId.isEmpty) throw Exception('User ID cannot be empty');
 
+    // Validate imageBase64 if provided
+    if (imageBase64 != null) {
+      try {
+        base64Decode(imageBase64);
+      } catch (e) {
+        throw Exception('Invalid image data: $e');
+      }
+    }
+
+    // Validate email if provided
+    if (email != null && email.trim().isNotEmpty) {
+      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+      if (!emailRegex.hasMatch(email.trim())) {
+        throw Exception('Invalid email format');
+      }
+    }
+
+    // Validate phone if provided
+    if (phone != null && phone.trim().isNotEmpty && phoneCountryCode != null) {
+      final phoneRegex = RegExp(r'^\d{7,15}$');
+      if (!phoneRegex.hasMatch(phone.trim())) {
+        throw Exception('Invalid phone number format');
+      }
+    }
+
     final profileData = ProfileData(
       id: userId,
       name: trimmedName,
@@ -40,26 +65,59 @@ class CommunityFirebaseService {
     );
 
     final userData = profileData.toMap();
-    final existingUser = await _firestore.collection('users').doc(userId).get();
-    if (!existingUser.exists || existingUser.data()?['username'] == null) {
-      userData['username'] = '@${trimmedName.toLowerCase().replaceAll(' ', '')}';
-    }
-
-    userData['createdAt'] = Timestamp.now();
-    userData['phone'] = phone != null && phone.trim().isNotEmpty && phoneCountryCode != null
-        ? '$phoneCountryCode${phone.trim()}'
-        : null;
-
     try {
+      final existingUser = await _firestore.collection('users').doc(userId).get();
+      String? username;
+
+      if (!existingUser.exists || existingUser.data()?['username'] == null) {
+        // Generate a unique username based on name
+        String baseUsername = trimmedName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+        if (baseUsername.length < 3) {
+          baseUsername = (_auth.currentUser?.email?.split('@')[0] ?? 'user').toLowerCase();
+        }
+        baseUsername = baseUsername.substring(0, baseUsername.length.clamp(3, 20));
+
+        // Ensure username is unique
+        username = await _generateUniqueUsername(baseUsername);
+        userData['username'] = '@$username';
+      } else {
+        userData['username'] = existingUser.data()!['username'];
+      }
+
+      userData['createdAt'] = existingUser.exists ? existingUser.data()!['createdAt'] ?? Timestamp.now() : Timestamp.now();
+      userData['phone'] = phone != null && phone.trim().isNotEmpty && phoneCountryCode != null
+          ? '$phoneCountryCode${phone.trim()}'
+          : null;
+
       await _firestore
           .collection('users')
           .doc(userId)
           .set(userData, SetOptions(merge: true));
-      debugPrint('User profile created/updated for userId: $userId');
+      debugPrint('User profile created/updated for userId: $userId, username: ${userData['username']}');
     } catch (e) {
       debugPrint('Error creating/updating user profile for userId: $userId: $e');
-      rethrow;
+      if (e.toString().contains('permission-denied')) {
+        throw Exception('Permission denied: Unable to write profile data');
+      } else if (e.toString().contains('network')) {
+        throw Exception('Network error: Please check your internet connection');
+      }
+      throw Exception('Failed to save profile: $e');
     }
+  }
+
+  Future<String> _generateUniqueUsername(String baseUsername) async {
+    String username = baseUsername;
+    int suffix = 1;
+    while (true) {
+      final query = await _firestore
+          .collection('users')
+          .where('username', isEqualTo: '@$username')
+          .get();
+      if (query.docs.isEmpty) break;
+      username = '$baseUsername$suffix';
+      suffix++;
+    }
+    return username;
   }
 
   Future<ProfileData?> getUserProfile(String userId) async {
@@ -91,7 +149,7 @@ class CommunityFirebaseService {
       debugPrint('Privacy settings updated for userId: $userId');
     } catch (e) {
       debugPrint('Error updating privacy settings for userId: $userId: $e');
-      rethrow;
+      throw Exception('Failed to update privacy settings: $e');
     }
   }
 
@@ -143,7 +201,7 @@ class CommunityFirebaseService {
       debugPrint('Post created for user: ${user.uid}, postId: ${docRef.id}');
     } catch (e) {
       debugPrint('Error creating post for user: ${user.uid}: $e');
-      rethrow;
+      throw Exception('Failed to create post: $e');
     }
   }
 
@@ -174,7 +232,7 @@ class CommunityFirebaseService {
       debugPrint('Post updated: $postId');
     } catch (e) {
       debugPrint('Error updating post $postId: $e');
-      rethrow;
+      throw Exception('Failed to update post: $e');
     }
   }
 
@@ -199,7 +257,7 @@ class CommunityFirebaseService {
       debugPrint('Post deleted: $postId');
     } catch (e) {
       debugPrint('Error deleting post $postId: $e');
-      rethrow;
+      throw Exception('Failed to delete post: $e');
     }
   }
 
@@ -234,7 +292,7 @@ class CommunityFirebaseService {
       debugPrint('Post liked: $postId, user: $userId');
     } catch (e) {
       debugPrint('Error liking post $postId for user $userId: $e');
-      rethrow;
+      throw Exception('Failed to like post: $e');
     }
   }
 
@@ -254,7 +312,7 @@ class CommunityFirebaseService {
       debugPrint('Post unliked: $postId, user: $userId');
     } catch (e) {
       debugPrint('Error unliking post $postId for user $userId: $e');
-      rethrow;
+      throw Exception('Failed to unlike post: $e');
     }
   }
 
@@ -324,7 +382,7 @@ class CommunityFirebaseService {
       debugPrint('Post shared: $postId, user: $userId');
     } catch (e) {
       debugPrint('Error sharing post $postId for user $userId: $e');
-      rethrow;
+      throw Exception('Failed to share post: $e');
     }
   }
 
@@ -365,7 +423,7 @@ class CommunityFirebaseService {
       } else if (e.toString().contains('network')) {
         throw Exception('Network error: Please check your internet connection.');
       }
-      rethrow;
+      throw Exception('Failed to add comment: $e');
     }
   }
 
@@ -389,7 +447,7 @@ class CommunityFirebaseService {
       debugPrint('Comment updated: $commentId in post $postId');
     } catch (e) {
       debugPrint('Error updating comment $commentId for post $postId: $e');
-      rethrow;
+      throw Exception('Failed to update comment: $e');
     }
   }
 
@@ -410,7 +468,7 @@ class CommunityFirebaseService {
       debugPrint('Comment deleted: $commentId from post $postId');
     } catch (e) {
       debugPrint('Error deleting comment $commentId for post $postId: $e');
-      rethrow;
+      throw Exception('Failed to delete comment: $e');
     }
   }
 
@@ -442,7 +500,7 @@ class CommunityFirebaseService {
       debugPrint('Post reported: $postId by user: ${user.uid}');
     } catch (e) {
       debugPrint('Error reporting post $postId: $e');
-      rethrow;
+      throw Exception('Failed to report post: $e');
     }
   }
 
@@ -503,7 +561,7 @@ class CommunityFirebaseService {
       } else if (e.toString().contains('network')) {
         throw Exception('Network error: Please check your internet connection.');
       }
-      rethrow;
+      throw Exception('Failed to send message: $e');
     }
   }
 
@@ -527,7 +585,7 @@ class CommunityFirebaseService {
       debugPrint('Message updated: $messageId in conversation $conversationId');
     } catch (e) {
       debugPrint('Error updating message $messageId in conversation $conversationId: $e');
-      rethrow;
+      throw Exception('Failed to update message: $e');
     }
   }
 
@@ -548,7 +606,7 @@ class CommunityFirebaseService {
       debugPrint('Message deleted: $messageId from conversation $conversationId');
     } catch (e) {
       debugPrint('Error deleting message $messageId in conversation $conversationId: $e');
-      rethrow;
+      throw Exception('Failed to delete message: $e');
     }
   }
 

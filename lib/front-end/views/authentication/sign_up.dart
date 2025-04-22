@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import '../../controllers/session_controller.dart';
 import '../../services/auth_service.dart';
@@ -41,6 +41,13 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     );
     _fadeAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeIn);
     _animationController.forward();
+    // Set status bar style
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
   }
 
   @override
@@ -102,7 +109,6 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
         await _sessionController.saveLastLogin();
         debugPrint('Registration successful, session saved');
 
-        // Ensure context is still valid before navigating
         if (!mounted) {
           debugPrint('Context not mounted, aborting navigation');
           setState(() {
@@ -148,14 +154,20 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     return Theme(
       data: AppTheme.theme,
       child: Scaffold(
+        extendBodyBehindAppBar: true,
+        backgroundColor: AppTheme.backgroundColor,
         body: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(child: _buildForm()),
-              ],
+          top: false,
+          child: SingleChildScrollView(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: AppTheme.paddingMedium),
+                  _buildForm(),
+                ],
+              ),
             ),
           ),
         ),
@@ -165,34 +177,57 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: AppTheme.paddingLarge,
-        horizontal: AppTheme.paddingMedium,
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        AppTheme.paddingLarge,
+        MediaQuery.of(context).padding.top + AppTheme.paddingLarge,
+        AppTheme.paddingLarge,
+        AppTheme.paddingLarge,
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppTheme.primaryColor, AppTheme.secondaryColor.withOpacity(0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
         ),
+        // For solid color, uncomment below and comment gradient
+        // color: AppTheme.primaryColor,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
+          CircleAvatar(
+            radius: 48,
+            backgroundColor: AppTheme.white,
+            child: Icon(
+              Icons.person_add_rounded,
+              size: 48,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          const SizedBox(height: AppTheme.paddingMedium),
           Text(
             'Create Account',
-            style: GoogleFonts.poppins(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               color: AppTheme.white,
+              fontWeight: FontWeight.bold,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppTheme.paddingSmall),
           Text(
             'Join the Hair Loss System',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              color: AppTheme.white,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.white.withOpacity(0.9),
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -200,12 +235,14 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   }
 
   Widget _buildForm() {
-    return Card(
-      margin: const EdgeInsets.all(AppTheme.paddingSmall),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 4,
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppTheme.paddingMedium,
+        vertical: AppTheme.paddingSmall,
+      ),
+      decoration: AppTheme.cardDecoration,
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.paddingMedium),
+        padding: const EdgeInsets.all(AppTheme.paddingLarge),
         child: Form(
           key: _formKey,
           child: Column(
@@ -215,14 +252,23 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Full Name',
-                  prefixIcon: const Icon(Icons.person, color: AppTheme.primaryColor),
+                  prefixIcon: Icon(Icons.person_rounded, color: AppTheme.primaryColor),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
                   ),
                   filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.3),
+                  fillColor: AppTheme.accentColor.withOpacity(0.5),
                 ),
-                style: GoogleFonts.poppins(fontSize: 14),
+                style: Theme.of(context).textTheme.bodyMedium,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Enter your name';
@@ -232,21 +278,31 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   }
                   return null;
                 },
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: AppTheme.paddingSmall),
+              const SizedBox(height: AppTheme.paddingMedium),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'Email',
-                  prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
+                  prefixIcon: Icon(Icons.email_rounded, color: AppTheme.primaryColor),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
                   ),
                   filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.3),
+                  fillColor: AppTheme.accentColor.withOpacity(0.5),
                 ),
                 keyboardType: TextInputType.emailAddress,
-                style: GoogleFonts.poppins(fontSize: 14),
+                style: Theme.of(context).textTheme.bodyMedium,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Enter your email';
@@ -256,20 +312,30 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   }
                   return null;
                 },
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: AppTheme.paddingSmall),
+              const SizedBox(height: AppTheme.paddingMedium),
               IntlPhoneField(
                 controller: _phoneNumberPartController,
                 decoration: InputDecoration(
                   labelText: 'Phone Number',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
                   ),
                   filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.3),
+                  fillColor: AppTheme.accentColor.withOpacity(0.5),
                 ),
                 initialCountryCode: 'US',
-                style: GoogleFonts.poppins(fontSize: 14),
+                style: Theme.of(context).textTheme.bodyMedium,
                 onCountryChanged: (country) {
                   setState(() => _phoneCountryCode = '+${country.dialCode}');
                 },
@@ -283,25 +349,38 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   }
                   return null;
                 },
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: AppTheme.paddingSmall),
+              const SizedBox(height: AppTheme.paddingMedium),
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: const Icon(Icons.lock, color: AppTheme.primaryColor),
+                  prefixIcon: Icon(Icons.lock_rounded, color: AppTheme.primaryColor),
                   suffixIcon: IconButton(
-                    icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off, color: AppTheme.primaryColor),
+                    icon: Icon(
+                      _showPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                      color: AppTheme.primaryColor,
+                    ),
                     onPressed: () => setState(() => _showPassword = !_showPassword),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
                   ),
                   filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.3),
+                  fillColor: AppTheme.accentColor.withOpacity(0.5),
                 ),
                 obscureText: !_showPassword,
-                style: GoogleFonts.poppins(fontSize: 14),
+                style: Theme.of(context).textTheme.bodyMedium,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Enter a password';
@@ -311,25 +390,38 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   }
                   return null;
                 },
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: AppTheme.paddingSmall),
+              const SizedBox(height: AppTheme.paddingMedium),
               TextFormField(
                 controller: _confirmPasswordController,
                 decoration: InputDecoration(
                   labelText: 'Confirm Password',
-                  prefixIcon: const Icon(Icons.lock, color: AppTheme.primaryColor),
+                  prefixIcon: Icon(Icons.lock_rounded, color: AppTheme.primaryColor),
                   suffixIcon: IconButton(
-                    icon: Icon(_showConfirmPassword ? Icons.visibility : Icons.visibility_off, color: AppTheme.primaryColor),
+                    icon: Icon(
+                      _showConfirmPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                      color: AppTheme.primaryColor,
+                    ),
                     onPressed: () => setState(() => _showConfirmPassword = !_showConfirmPassword),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
                   ),
                   filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.3),
+                  fillColor: AppTheme.accentColor.withOpacity(0.5),
                 ),
                 obscureText: !_showConfirmPassword,
-                style: GoogleFonts.poppins(fontSize: 14),
+                style: Theme.of(context).textTheme.bodyMedium,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Confirm your password';
@@ -339,64 +431,80 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
                   }
                   return null;
                 },
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _register(),
               ),
-              const SizedBox(height: AppTheme.paddingSmall),
+              const SizedBox(height: AppTheme.paddingMedium),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: ['User', 'Admin'].map((role) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppTheme.paddingSmall),
                     child: ChoiceChip(
-                      label: Text(role, style: GoogleFonts.poppins(fontSize: 14)),
+                      label: Text(role, style: Theme.of(context).textTheme.bodyMedium),
                       selected: _selectedRole == role,
                       onSelected: (selected) => setState(() => _selectedRole = role),
                       selectedColor: AppTheme.secondaryColor,
                       backgroundColor: AppTheme.accentColor,
-                      labelStyle: TextStyle(color: _selectedRole == role ? AppTheme.white : Colors.black),
+                      labelStyle: TextStyle(
+                        color: _selectedRole == role ? AppTheme.white : Colors.black87,
+                      ),
+                      elevation: 2,
+                      pressElevation: 4,
                     ),
                   );
                 }).toList(),
               ),
               if (_errorMessage != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: AppTheme.paddingSmall),
+                  padding: const EdgeInsets.only(top: AppTheme.paddingMedium, bottom: AppTheme.paddingSmall),
                   child: Text(
                     _errorMessage!,
-                    style: GoogleFonts.poppins(fontSize: 12, color: AppTheme.errorColor),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.errorColor,
+                      fontWeight: FontWeight.w500,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
               const SizedBox(height: AppTheme.paddingMedium),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor))
+                  ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                ),
+              )
                   : ElevatedButton(
                 onPressed: _register,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.secondaryColor,
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: AppTheme.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 2,
                 ),
                 child: Text(
                   'Register',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppTheme.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const SizedBox(height: AppTheme.paddingSmall),
+              const SizedBox(height: AppTheme.paddingMedium),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Already have an account? ', style: GoogleFonts.poppins(fontSize: 12)),
+                  Text(
+                    'Already have an account? ',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(foregroundColor: AppTheme.secondaryColor),
                     child: Text(
                       'Login',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: AppTheme.primaryColor,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),

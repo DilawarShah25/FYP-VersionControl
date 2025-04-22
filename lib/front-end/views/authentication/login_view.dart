@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:scalpsense/front-end/views/authentication/sign_up.dart';
 import '../../controllers/session_controller.dart';
 import '../../services/auth_service.dart';
@@ -19,6 +20,18 @@ class _LoginViewState extends State<LoginView> {
   String? _errorMessage;
   bool _showPassword = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set status bar color or style
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent, // Transparent to allow header gradient
+        statusBarIconBrightness: Brightness.light, // White icons for contrast
+      ),
+    );
+  }
 
   Future<void> _login() async {
     if (_isLoading) return;
@@ -90,11 +103,15 @@ class _LoginViewState extends State<LoginView> {
     return Theme(
       data: AppTheme.theme,
       child: Scaffold(
+        extendBodyBehindAppBar: true, // Extend header behind status bar
+        backgroundColor: AppTheme.backgroundColor,
         body: SafeArea(
+          top: false, // Allow header to cover top area
           child: SingleChildScrollView(
             child: Column(
               children: [
                 _buildHeader(),
+                const SizedBox(height: AppTheme.paddingMedium),
                 _buildForm(),
               ],
             ),
@@ -106,24 +123,57 @@ class _LoginViewState extends State<LoginView> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.paddingLarge),
-      color: AppTheme.primaryColor,
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        AppTheme.paddingLarge,
+        MediaQuery.of(context).padding.top + AppTheme.paddingLarge, // Account for status bar height
+        AppTheme.paddingLarge,
+        AppTheme.paddingLarge,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+        ),
+        // For solid color, uncomment below and comment gradient
+        // color: AppTheme.primaryColor,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         children: [
-          const CircleAvatar(
-            radius: 40,
+          CircleAvatar(
+            radius: 48,
             backgroundColor: AppTheme.white,
-            child: Icon(Icons.person, size: 40, color: AppTheme.primaryColor),
+            child: Icon(
+              Icons.person_rounded,
+              size: 48,
+              color: AppTheme.primaryColor,
+            ),
           ),
           const SizedBox(height: AppTheme.paddingMedium),
           Text(
             'Welcome Back',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: AppTheme.white),
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              color: AppTheme.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppTheme.paddingSmall),
           Text(
-            'Login',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.white),
+            'Sign in to continue',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.white.withOpacity(0.9),
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -131,8 +181,12 @@ class _LoginViewState extends State<LoginView> {
   }
 
   Widget _buildForm() {
-    return Card(
-      margin: const EdgeInsets.all(AppTheme.paddingMedium),
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppTheme.paddingMedium,
+        vertical: AppTheme.paddingSmall,
+      ),
+      decoration: AppTheme.cardDecoration,
       child: Padding(
         padding: const EdgeInsets.all(AppTheme.paddingLarge),
         child: Column(
@@ -140,24 +194,58 @@ class _LoginViewState extends State<LoginView> {
           children: [
             TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Email',
-                prefixIcon: Icon(Icons.email),
+                prefixIcon: Icon(Icons.email_rounded, color: AppTheme.primaryColor),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.accentColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.accentColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                ),
+                filled: true,
+                fillColor: AppTheme.accentColor.withOpacity(0.5),
               ),
               keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: AppTheme.paddingMedium),
             TextFormField(
               controller: _passwordController,
               decoration: InputDecoration(
                 labelText: 'Password',
-                prefixIcon: const Icon(Icons.lock),
+                prefixIcon: Icon(Icons.lock_rounded, color: AppTheme.primaryColor),
                 suffixIcon: IconButton(
-                  icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off),
+                  icon: Icon(
+                    _showPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                    color: AppTheme.primaryColor,
+                  ),
                   onPressed: () => setState(() => _showPassword = !_showPassword),
                 ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.accentColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.accentColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                ),
+                filled: true,
+                fillColor: AppTheme.accentColor.withOpacity(0.5),
               ),
               obscureText: !_showPassword,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _login(),
             ),
             const SizedBox(height: AppTheme.paddingMedium),
             if (_errorMessage != null)
@@ -165,29 +253,76 @@ class _LoginViewState extends State<LoginView> {
                 padding: const EdgeInsets.only(bottom: AppTheme.paddingMedium),
                 child: Text(
                   _errorMessage!,
-                  style: TextStyle(color: AppTheme.errorColor),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.errorColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
             _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              ),
+            )
                 : ElevatedButton(
               onPressed: _login,
-              child: const Text('Login'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: AppTheme.white,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 24,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+              child: Text(
+                'Login',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             const SizedBox(height: AppTheme.paddingSmall),
             TextButton(
               onPressed: _resetPassword,
-              child: const Text('Forgot Password?'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+              ),
+              child: Text(
+                'Forgot Password?',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
             const SizedBox(height: AppTheme.paddingMedium),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Create a new account'),
+                Text(
+                  "Don't have an account? ",
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
                 TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignUpView())),
-                  child: const Text('Sign Up'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SignUpView()),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.secondaryColor,
+                  ),
+                  child: Text(
+                    'Sign Up',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),
