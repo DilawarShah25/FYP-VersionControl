@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import '../models/comment_model.dart';
 
 mixin OptimisticCommentMixin<T extends StatefulWidget> on State<T> {
-  // Use a more robust state management
   final List<CommentModel> _optimisticComments = [];
 
   List<CommentModel> get optimisticComments => List.unmodifiable(_optimisticComments);
@@ -20,7 +19,7 @@ mixin OptimisticCommentMixin<T extends StatefulWidget> on State<T> {
     required String userName,
     required String commentText,
   }) {
-    if (!mounted) return; // Ensure widget is still mounted
+    if (!mounted) return;
 
     debugPrint('Adding optimistic comment: $commentId');
     final optimisticComment = CommentModel(
@@ -28,7 +27,7 @@ mixin OptimisticCommentMixin<T extends StatefulWidget> on State<T> {
       userId: userId,
       userName: userName,
       commentText: commentText,
-      timestamp: Timestamp.fromDate(DateTime.now()), // More precise timestamp
+      timestamp: Timestamp.fromDate(DateTime.now()),
     );
 
     setState(() {

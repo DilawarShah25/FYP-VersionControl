@@ -1,9 +1,48 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<String> _generateUniqueUsername(String fullName) async {
+    String baseName = fullName.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
+    if (baseName.isEmpty) baseName = 'user';
+    baseName = baseName.length > 12 ? baseName.substring(0, 12) : baseName;
+
+    List<String> formats = [
+      '@$baseName',
+      '@${baseName.replaceAll(RegExp(r'[^a-z0-9]'), '_')}',
+      '@${baseName}_',
+    ];
+
+    Random random = Random();
+    String selectedFormat = formats[random.nextInt(formats.length)];
+    String username;
+    bool isUnique = false;
+    int attempt = 0;
+
+    do {
+      String digits = (random.nextInt(900) + 100).toString();
+      username = selectedFormat + digits;
+      if (username.length > 16) {
+        username = '@' + baseName.substring(0, 12) + digits;
+      }
+      final snapshot = await _firestore
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .get();
+      isUnique = snapshot.docs.isEmpty;
+      attempt++;
+      if (attempt > 10) {
+        digits = (random.nextInt(9000) + 1000).toString();
+        username = '@$baseName$digits';
+      }
+    } while (!isUnique);
+
+    return username;
+  }
 
   Future<Map<String, String?>> registerWithEmailAndPassword({
     required String name,
@@ -14,7 +53,6 @@ class AuthService {
     required String role,
   }) async {
     try {
-      // Validate inputs
       if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
         print('Validation failed: Invalid email format');
         return {'error': 'Invalid email format'};
@@ -36,7 +74,6 @@ class AuthService {
         return {'error': 'Invalid role'};
       }
 
-      // Create user in Firebase Authentication
       print('Creating Firebase Auth user for $email');
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -49,16 +86,19 @@ class AuthService {
         return {'error': 'Failed to create user'};
       }
 
-      // Send verification email
+      String username = await _generateUniqueUsername(name);
+      print('Generated username: $username');
+
       print('Sending verification email to $email');
       await user.sendEmailVerification();
 
-      // Prepare user document
       final phone = phoneCountryCode + phoneNumberPart;
       final now = Timestamp.now();
       final userDoc = {
+        'id': user.uid, // Added to match ProfileData
         'name': name,
         'email': email,
+        'username': username,
         'role': role,
         'phoneCountryCode': phoneCountryCode,
         'phoneNumberPart': phoneNumberPart,
@@ -68,13 +108,15 @@ class AuthService {
         'isEmailVerified': false,
         'lastLogin': now,
         'lastVerificationSent': now,
-        'profileImageUrl': null,
+        'image_base64': null,
+        'showContactDetails': true,
+        'showEmail': true,
+        'showPhone': true,
       };
 
       print('Saving user document for UID: ${user.uid}');
       print('User document content: $userDoc');
 
-      // Save user document to Firestore
       await _firestore.collection('users').doc(user.uid).set(userDoc);
 
       print('User document saved successfully');

@@ -98,12 +98,22 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
 
       debugPrint('Registration result: $result');
 
-      setState(() => _isLoading = false);
-
       if (result['error'] == null) {
         await _sessionController.saveLastLogin();
-        debugPrint('Registration successful, session saved, navigating to VerificationView');
+        debugPrint('Registration successful, session saved');
+
+        // Ensure context is still valid before navigating
+        if (!mounted) {
+          debugPrint('Context not mounted, aborting navigation');
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Navigation failed: Context not available.';
+          });
+          return;
+        }
+
         try {
+          debugPrint('Navigating to VerificationView for email: $email');
           await Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => VerificationView(email: email)),
@@ -112,7 +122,6 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
         } catch (e) {
           debugPrint('Navigation error: $e');
           setState(() {
-            _isLoading = false;
             _errorMessage = 'Failed to navigate to verification screen: ${e.toString()}';
           });
         }
@@ -124,10 +133,13 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
       }
     } catch (e) {
       setState(() {
-        _isLoading = false;
         _errorMessage = 'Unexpected error during registration: ${e.toString()}';
       });
       debugPrint('Unexpected error in _register: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

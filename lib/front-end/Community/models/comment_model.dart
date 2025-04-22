@@ -6,6 +6,7 @@ class CommentModel {
   final String userName;
   final String commentText;
   final Timestamp timestamp;
+  final Timestamp? editedAt;
 
   CommentModel({
     required this.commentId,
@@ -13,6 +14,7 @@ class CommentModel {
     required this.userName,
     required this.commentText,
     required this.timestamp,
+    this.editedAt,
   });
 
   factory CommentModel.fromFirestore(DocumentSnapshot doc) {
@@ -23,15 +25,15 @@ class CommentModel {
       userName: data['userName'] ?? 'Anonymous',
       commentText: data['commentText'] ?? '',
       timestamp: data['timestamp'] ?? Timestamp.now(),
+      editedAt: data['editedAt'],
     );
   }
 
-  Map<String, dynamic> toFirestore() {
-    return {
-      'userId': userId,
-      'userName': userName,
-      'commentText': commentText,
-      'timestamp': timestamp,
-    };
-  }
+  Map<String, dynamic> toFirestore() => {
+    'userId': userId,
+    'userName': userName,
+    'commentText': commentText,
+    'timestamp': timestamp,
+    'editedAt': editedAt,
+  };
 }

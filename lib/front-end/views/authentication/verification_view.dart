@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_theme.dart';
@@ -17,12 +19,33 @@ class _VerificationViewState extends State<VerificationView> {
   final AuthService _authService = AuthService();
   bool _isLoading = false;
   String? _message;
+  String? _username;
   Timer? _verificationTimer;
 
   @override
   void initState() {
     super.initState();
+    _fetchUsername();
     _startVerificationCheck();
+  }
+
+  Future<void> _fetchUsername() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (snapshot.exists) {
+          setState(() {
+            _username = snapshot.get('username');
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching username: $e');
+    }
   }
 
   void _startVerificationCheck() {
@@ -114,6 +137,17 @@ class _VerificationViewState extends State<VerificationView> {
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
+                    if (_username != null) ...[
+                      const SizedBox(height: AppTheme.paddingSmall),
+                      Text(
+                        'Your username: $_username',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.secondaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppTheme.paddingSmall),
                     Text(
                       'Waiting for verification...',
@@ -125,7 +159,9 @@ class _VerificationViewState extends State<VerificationView> {
                         _message!,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: _message!.contains('successfully') ? AppTheme.secondaryColor : AppTheme.errorColor,
+                          color: _message!.contains('successfully')
+                              ? AppTheme.secondaryColor
+                              : AppTheme.errorColor,
                         ),
                       ),
                     const SizedBox(height: AppTheme.paddingLarge),

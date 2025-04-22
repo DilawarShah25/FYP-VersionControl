@@ -1,104 +1,88 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/community_firebase_service.dart';
 import '../models/comment_model.dart';
 import '../models/post_model.dart';
-import '../services/community_firebase_service.dart';
 
 class CommunityController {
   final CommunityFirebaseService _service = CommunityFirebaseService();
-
-  CommunityFirebaseService get service => _service;
 
   Future<void> createPost({
     required String textContent,
     XFile? image,
     required String userName,
     String? userProfileImage,
+    String? location,
+    List<String>? tags,
   }) async {
-    if (userName.trim().isEmpty) {
-      debugPrint('Error: User name cannot be empty');
-      throw Exception('User name cannot be empty');
-    }
-    debugPrint('Creating post for user: $userName, text: $textContent');
-    try {
-      await _service.createPost(
-        textContent: textContent,
-        image: image,
-        userName: userName,
-        userProfileImage: userProfileImage,
-      );
-      debugPrint('Post created successfully');
-    } catch (e) {
-      debugPrint('Error creating post: $e');
-      throw e;
-    }
+    await _service.createPost(
+      textContent: textContent,
+      image: image,
+      userName: userName,
+      userProfileImage: userProfileImage,
+      location: location,
+      tags: tags,
+    );
+  }
+
+  Future<void> updatePost(String postId, String textContent, XFile? image) async {
+    await _service.updatePost(postId, textContent, image);
   }
 
   Future<void> deletePost(String postId) async {
-    debugPrint('Deleting post: $postId');
-    try {
-      await _service.deletePost(postId);
-      debugPrint('Post deleted successfully');
-    } catch (e) {
-      debugPrint('Error deleting post: $e');
-      throw e;
-    }
+    await _service.deletePost(postId);
   }
 
-  Stream<List<PostModel>> getPosts({int limit = 10}) {
-    debugPrint('Fetching posts with limit: $limit');
-    return _service.getPosts(limit: limit).handleError((error) {
-      debugPrint('Error fetching posts: $error');
-      throw error;
-    });
-  }
-
-  Future<void> toggleLike(String postId, String userId) async {
-    debugPrint('Toggling like for post: $postId, user: $userId');
-    try {
-      await _service.toggleLike(postId, userId);
-      debugPrint('Like toggled successfully');
-    } catch (e) {
-      debugPrint('Error toggling like: $e');
-      throw e;
-    }
-  }
-
-  Future<void> addComment(String postId, String commentText, String userName) async {
-    if (userName.trim().isEmpty) {
-      debugPrint('Error: User name cannot be empty');
-      throw Exception('User name cannot be empty');
-    }
-    if (commentText.trim().isEmpty) {
-      debugPrint('Error: Comment text cannot be empty');
-      throw Exception('Comment text cannot be empty');
-    }
-    debugPrint('Adding comment to post: $postId, user: $userName, text: $commentText');
-    try {
-      await _service.addComment(postId, commentText, userName);
-      debugPrint('Comment added successfully');
-    } catch (e) {
-      debugPrint('Error adding comment: $e');
-      throw e;
-    }
+  Stream<List<PostModel>> getPosts({int limit = 20, DocumentSnapshot? startAfter}) {
+    return _service.getPosts(limit: limit, startAfter: startAfter);
   }
 
   Stream<List<CommentModel>> getComments(String postId) {
-    debugPrint('Fetching comments for post: $postId');
-    return _service.getComments(postId).handleError((error) {
-      debugPrint('Error fetching comments: $error');
-      throw error;
-    });
+    return _service.getComments(postId);
   }
 
-  Future<void> reportPost(String postId) async {
-    debugPrint('Reporting post: $postId');
-    try {
-      await _service.reportPost(postId);
-      debugPrint('Post reported successfully');
-    } catch (e) {
-      debugPrint('Error reporting post: $e');
-      throw e;
-    }
+  Future<void> addComment({
+    required String postId,
+    required String commentText,
+    required String userName,
+    required String userId,
+  }) async {
+    await _service.addComment(postId, commentText, userName, userId);
+  }
+
+  Future<void> updateComment(String postId, String commentId, String commentText) async {
+    await _service.updateComment(postId, commentId, commentText);
+  }
+
+  Future<void> deleteComment(String postId, String commentId) async {
+    await _service.deleteComment(postId, commentId);
+  }
+
+  Future<void> likePost(String postId, String userId) async {
+    await _service.likePost(postId, userId);
+  }
+
+  Future<void> unlikePost(String postId, String userId) async {
+    await _service.unlikePost(postId, userId);
+  }
+
+  Future<bool> hasLikedPost(String postId, String userId) async {
+    return await _service.hasLikedPost(postId, userId);
+  }
+
+  Future<int> getLikeCount(String postId) async {
+    return await _service.getLikeCount(postId);
+  }
+
+  Stream<int> getLikeCountStream(String postId) {
+    return _service.getLikeCountStream(postId);
+  }
+
+  Stream<bool> hasLikedPostStream(String postId, String userId) {
+    return _service.hasLikedPostStream(postId, userId);
+  }
+
+  Future<void> sharePost(String postId, String userId) async {
+    await _service.sharePost(postId, userId);
   }
 }

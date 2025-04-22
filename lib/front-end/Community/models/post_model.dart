@@ -8,11 +8,11 @@ class PostModel {
   final String textContent;
   final String? imageBase64;
   final Timestamp timestamp;
-  final List<String> likes;
-  final List<String> comments;
-  final List<String> shares; // Added for share functionality
-  final String? location; // Added for geotagging
-  final List<String> tags; // Added for post categorization
+  final List<String>? comments; // Made optional
+  final List<String> shares;
+  final String? location;
+  final List<String> tags;
+  final Timestamp? lastEdited;
 
   PostModel({
     required this.postId,
@@ -22,11 +22,11 @@ class PostModel {
     required this.textContent,
     this.imageBase64,
     required this.timestamp,
-    required this.likes,
-    required this.comments,
+    this.comments, // Made optional
     required this.shares,
     this.location,
     required this.tags,
+    this.lastEdited,
   });
 
   factory PostModel.fromFirestore(DocumentSnapshot doc) {
@@ -39,26 +39,27 @@ class PostModel {
       textContent: data['textContent'] ?? '',
       imageBase64: data['imageBase64'],
       timestamp: data['timestamp'] ?? Timestamp.now(),
-      likes: List<String>.from(data['likes'] ?? []),
-      comments: List<String>.from(data['comments'] ?? []),
+      comments: data['comments'] != null ? List<String>.from(data['comments']) : null, // Handle null
       shares: List<String>.from(data['shares'] ?? []),
       location: data['location'],
       tags: List<String>.from(data['tags'] ?? []),
+      lastEdited: data['lastEdited'],
     );
   }
 
   Map<String, dynamic> toFirestore() => {
+    'postId': postId,
     'userId': userId,
     'userName': userName,
     'userProfileImage': userProfileImage,
     'textContent': textContent,
     'imageBase64': imageBase64,
     'timestamp': timestamp,
-    'likes': likes,
-    'comments': comments,
+    if (comments != null) 'comments': comments, // Only include if not null
     'shares': shares,
     'location': location,
     'tags': tags,
+    'lastEdited': lastEdited,
   };
 
   PostModel copyWith({
@@ -69,11 +70,11 @@ class PostModel {
     String? textContent,
     String? imageBase64,
     Timestamp? timestamp,
-    List<String>? likes,
     List<String>? comments,
     List<String>? shares,
     String? location,
     List<String>? tags,
+    Timestamp? lastEdited,
   }) {
     return PostModel(
       postId: postId ?? this.postId,
@@ -83,11 +84,11 @@ class PostModel {
       textContent: textContent ?? this.textContent,
       imageBase64: imageBase64 ?? this.imageBase64,
       timestamp: timestamp ?? this.timestamp,
-      likes: likes ?? this.likes,
       comments: comments ?? this.comments,
       shares: shares ?? this.shares,
       location: location ?? this.location,
       tags: tags ?? this.tags,
+      lastEdited: lastEdited ?? this.lastEdited,
     );
   }
 }
