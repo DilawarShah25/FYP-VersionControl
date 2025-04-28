@@ -16,7 +16,7 @@ dependencies:
   socket_io_client: ^3.0.2
   flutter_markdown: ^0.7.4+3
   google_maps_flutter: ^2.10.0
-  #  geolocator: ^13.0.2
+  geolocator: ^14.0.0
   firebase_core: ^3.12.1
   firebase_auth: ^5.5.1
   cloud_firestore: ^5.6.5
@@ -29,6 +29,13 @@ dependencies:
   intl: ^0.20.2
   permission_handler: ^11.3.1
   share_plus: ^10.1.4
+  camera: ^0.11.1
+  shimmer: ^3.0.0
+  location: ^8.0.0
+  flutter_animate: ^4.5.2
+  firebase_ml_model_downloader: ^0.3.3+3
+#  tflite: ^1.1.2
+  tflite_flutter: ^0.11.0
 #  async: ^2.13.0
 
 
@@ -41,27 +48,30 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - lib/front-end/assets/images/revive_hair.png
-    - lib/front-end/assets/icons/app_logo.png
-    - lib/front-end/assets/images/scanner.png
-    - lib/front-end/assets/images/blue background.jpg
-    - lib/front-end/assets/images/carousel_item1.png
-    - lib/front-end/assets/images/carousel_item2.png
-    - lib/front-end/assets/images/carousel_item3.png
-    - lib/front-end/assets/images/carousel_item4.png
-    - lib/front-end/assets/images/skin_type_4.png
-    - lib/front-end/assets/images/blog/hair_loss_types.png
-    - lib/front-end/assets/images/blog/hair-care-routine-for-men.jpg
-    - lib/front-end/assets/images/blog/home_remedy.png
-    - lib/front-end/assets/images/blog/healthy_scalp.jpg
-    - lib/front-end/assets/images/default_avatar.jpg
+    - lib/assets/images/revive_hair.png
+    - lib/assets/icons/app_logo.png
+    - lib/assets/images/scanner.png
+    - lib/assets/images/blue background.jpg
+    - lib/assets/images/carousel_item1.png
+    - lib/assets/images/carousel_item2.png
+    - lib/assets/images/carousel_item3.png
+    - lib/assets/images/carousel_item4.png
+    - lib/assets/images/skin_type_4.png
+    - lib/assets/images/blog/hair_loss_types.png
+    - lib/assets/images/blog/hair-care-routine-for-men.jpg
+    - lib/assets/images/blog/home_remedy.png
+    - lib/assets/images/blog/healthy_scalp.jpg
+    - lib/assets/images/default_avatar.jpg
+    - lib/DetectionAndPrevention/assets/model1.tflite
+    - lib/DetectionAndPrevention/assets/labels1.txt
+    - lib/NearbyDermatologist/assets/dermatologist.png
   fonts:
     - family: Pacifico
       fonts:
         - asset: fonts/Pacifico-Regular.ttf
     - family: sans-serif
       fonts:
-        - asset: lib/front-end/assets/fonts/SourceSans3-VariableFont_wght.ttf
+        - asset: lib/assets/fonts/SourceSans3-VariableFont_wght.ttf
     - family: CCZoinks
       fonts:
-        - asset: lib/front-end/assets/fonts/CCZoinks.ttf
+        - asset: lib/assets/fonts/CCZoinks.ttf
