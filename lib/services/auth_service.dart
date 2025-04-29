@@ -95,7 +95,7 @@ class AuthService {
       final phone = phoneCountryCode + phoneNumberPart;
       final now = Timestamp.now();
       final userDoc = {
-        'id': user.uid, // Added to match ProfileData
+        'id': user.uid,
         'name': name,
         'email': email,
         'username': username,

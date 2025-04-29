@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import '../../Community/view/community_feed_screen.dart';
-import '../dashboard/other_dashboard/blog/blog_view.dart';
-import '../dashboard/other_dashboard/home_view.dart';
 import '../../NearbyDermatologist/screens/map_screen.dart';
+import '../dashboard/blog/blog_view.dart';
+import '../dashboard/home_view.dart';
 
 class Carousel extends StatefulWidget {
   final List<String> images;

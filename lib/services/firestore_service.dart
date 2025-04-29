@@ -1,14 +1,73 @@
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../NearbyDermatologist/models/clinic.dart';
 import '../models/profile_data.dart';
 
-
 class FirestoreService {
   final CollectionReference _users = FirebaseFirestore.instance.collection('users');
   final CollectionReference _clinics = FirebaseFirestore.instance.collection('clinics');
+
+  Future<void> createUserProfile({
+    required String userId,
+    required String name,
+    required String email,
+    required String phone,
+    required String phoneCountryCode,
+    String? imageBase64,
+    required bool showContactDetails,
+  }) async {
+    try {
+      final userDoc = {
+        'id': userId,
+        'name': name,
+        'email': email,
+        'phone': phoneCountryCode + phone,
+        'phoneCountryCode': phoneCountryCode,
+        'phoneNumberPart': phone,
+        'image_base64': imageBase64,
+        'showContactDetails': showContactDetails,
+        'showEmail': showContactDetails,
+        'showPhone': showContactDetails,
+        // Preserve existing fields not provided in the update
+        'username': FieldValue.serverTimestamp(), // Placeholder to avoid overwriting
+        'role': FieldValue.serverTimestamp(), // Placeholder to avoid overwriting
+        'uid': userId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'isEmailVerified': false,
+        'lastLogin': FieldValue.serverTimestamp(),
+        'lastVerificationSent': FieldValue.serverTimestamp(),
+      };
+      await _users.doc(userId).set(userDoc, SetOptions(merge: true));
+    } catch (e) {
+      print('Error creating/updating user profile: $e');
+      throw e;
+    }
+  }
+
+  Future<ProfileData?> getUserProfile(String uid) async {
+    try {
+      final doc = await _users.doc(uid).get();
+      if (!doc.exists) return null;
+      final data = doc.data() as Map<String, dynamic>;
+      final showContactDetails = data['showContactDetails'] as bool? ?? true;
+      return ProfileData(
+        id: doc.id,
+        name: data['name'] as String? ?? 'Unknown',
+        email: showContactDetails ? (data['email'] as String? ?? '') : '',
+        phoneCountryCode: showContactDetails ? (data['phoneCountryCode'] as String? ?? '+1') : '+1',
+        phoneNumberPart: showContactDetails ? (data['phoneNumberPart'] as String? ?? '') : '',
+        role: data['role'] as String? ?? 'User',
+        imageBase64: data['image_base64'] as String?,
+        showContactDetails: showContactDetails,
+        showEmail: showContactDetails ? (data['showEmail'] as bool? ?? true) : true,
+        showPhone: showContactDetails ? (data['showPhone'] as bool? ?? true) : true,
+      );
+    } catch (e) {
+      print('Error fetching user profile: $e');
+      return null;
+    }
+  }
 
   Future<void> updateProfile(String uid, Map<String, dynamic> data) async {
     await _users.doc(uid).set(data, SetOptions(merge: true));

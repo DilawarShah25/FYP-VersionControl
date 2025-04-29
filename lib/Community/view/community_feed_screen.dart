@@ -1,10 +1,9 @@
 import 'dart:convert';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/app_theme.dart';
-import '../../views/dashboard/other_dashboard/profile_view.dart';
+import '../../views/dashboard/profile_view.dart';
 import '../controllers/community_controller.dart';
 import '../models/post_model.dart';
 import 'create_post_screen.dart';
@@ -240,40 +239,6 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                                           },
                                         ),
                                       ],
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.share, color: Colors.black54),
-                                      onPressed: () async {
-                                        if (user == null) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text('Please log in to share posts',
-                                                  style: GoogleFonts.poppins()),
-                                              backgroundColor: AppTheme.errorColor,
-                                            ),
-                                          );
-                                          return;
-                                        }
-                                        try {
-                                          await _controller.sharePost(post.postId, user.uid);
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content:
-                                              Text('Post shared', style: GoogleFonts.poppins()),
-                                              backgroundColor: AppTheme.primaryColor,
-                                            ),
-                                          );
-                                        } catch (e) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text('Error sharing post: $e',
-                                                  style: GoogleFonts.poppins()),
-                                              backgroundColor: AppTheme.errorColor,
-                                            ),
-                                          );
-                                          debugPrint('Error sharing post ${post.postId}: $e');
-                                        }
-                                      },
                                     ),
                                   ],
                                 ),

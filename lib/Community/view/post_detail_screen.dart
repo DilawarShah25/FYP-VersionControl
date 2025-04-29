@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../utils/app_theme.dart';
-import '../../views/dashboard/other_dashboard/profile_view.dart';
+import '../../views/dashboard/profile_view.dart';
 import '../controllers/community_controller.dart';
 import '../models/comment_model.dart';
 import '../models/optimistic_comment_mixin.dart';

@@ -6,10 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:scalpsense/utils/app_theme.dart';
 import 'package:scalpsense/views/authentication/login_view.dart';
 import 'package:scalpsense/views/authentication/sign_up.dart';
-import 'package:scalpsense/views/dashboard/other_dashboard/blog/blog_view.dart';
-import 'package:scalpsense/views/dashboard/other_dashboard/faq/faq_view.dart';
-import 'package:scalpsense/views/dashboard/other_dashboard/home_view.dart';
-
+import 'package:scalpsense/views/dashboard/blog/blog_view.dart';
+import 'package:scalpsense/views/dashboard/faq/faq_view.dart';
+import 'package:scalpsense/views/dashboard/home_view.dart';
 import 'Community/view/community_feed_screen.dart';
 import 'controllers/screen_navigation_controller.dart';
 import 'controllers/session_controller.dart';

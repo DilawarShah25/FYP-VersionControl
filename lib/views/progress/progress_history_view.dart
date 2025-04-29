@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../dashboard/other_dashboard/faq/detail_screen.dart'; // Import the DetailScreen class
+
+import '../dashboard/blog/detail_screen.dart';
 
 class ProgressHistoryView extends StatelessWidget {
   const ProgressHistoryView({super.key});

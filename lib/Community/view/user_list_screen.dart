@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/profile_data.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/app_theme.dart';
-import 'chat_screen.dart';
 
 class UserListScreen extends StatefulWidget {
   const UserListScreen({super.key});
@@ -127,17 +126,14 @@ class _UserListScreenState extends State<UserListScreen> {
                 user.username ?? '@${user.name.toLowerCase().replaceAll(' ', '')}',
                 style: GoogleFonts.poppins(color: Colors.black54),
               ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatScreen(
-                      otherUserId: user.id,
-                      otherUserName: user.name,
-                    ),
-                  ),
-                );
-              },
+              // onTap: () {
+              //   Navigator.push(
+              //     context,
+              //     MaterialPageRoute(
+              //       builder: (context) => //
+              //     ),
+              //   );
+              // },
             );
           },
         ),

@@ -6,7 +6,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/profile_data.dart';
 import '../models/comment_model.dart';
-import '../models/message_model.dart';
 import '../models/post_model.dart';
 
 class CommunityFirebaseService {
@@ -504,7 +503,7 @@ class CommunityFirebaseService {
     }
   }
 
-  Future<void> sendMessage(String receiverId, String text) async {
+  Future<void> sendMessage(String receiverId, String text, {int retries = 3}) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not logged in');
     final trimmedText = text.trim();
@@ -512,76 +511,86 @@ class CommunityFirebaseService {
     if (receiverId.trim().isEmpty) throw Exception('Receiver ID cannot be empty');
     if (receiverId == user.uid) throw Exception('Cannot send message to self');
 
-    try {
-      // Refresh authentication token
-      await user.getIdToken(true);
-      debugPrint('Authenticated user: ${user.uid}');
+    int attempt = 0;
+    while (attempt < retries) {
+      try {
+        // Refresh authentication token
+        await user.getIdToken(true);
+        debugPrint('Authenticated user: ${user.uid}');
 
-      // Validate receiver profile
-      final receiverDoc = await _firestore.collection('users').doc(receiverId).get();
-      if (!receiverDoc.exists) throw Exception('Recipient not found: $receiverId');
+        // Validate receiver profile
+        final receiverDoc = await _firestore.collection('users').doc(receiverId).get();
+        if (!receiverDoc.exists) throw Exception('Recipient not found: $receiverId');
 
-      // Create conversation ID
-      final userIds = [user.uid, receiverId]..sort();
-      if (userIds.length != 2 || userIds.contains(null) || userIds.contains('')) {
-        throw Exception('Invalid user IDs: $userIds');
-      }
-      final conversationId = userIds.join('_');
-      debugPrint('Conversation ID: $conversationId, participants: $userIds');
-
-      // Create message
-      final message = MessageModel(
-        messageId: '',
-        senderId: user.uid,
-        receiverId: receiverId,
-        text: trimmedText,
-        timestamp: Timestamp.now(),
-      );
-
-      final conversationRef = _firestore.collection('conversations').doc(conversationId);
-      final messageRef = conversationRef.collection('messages').doc();
-
-      // Use batch to ensure atomic writes
-      final batch = _firestore.batch();
-
-      // Check if conversation exists
-      final conversation = await conversationRef.get();
-      if (!conversation.exists) {
-        batch.set(conversationRef, {
-          'participants': userIds,
-          'lastMessage': trimmedText,
-          'timestamp': Timestamp.now(),
-        });
-        debugPrint('Creating new conversation: $conversationId with participants: $userIds');
-      } else {
-        final participants = List<String>.from(conversation.data()?['participants'] ?? []);
-        if (!participants.contains(user.uid) || !participants.contains(receiverId)) {
-          throw Exception('Invalid conversation participants: $conversationId');
+        // Create conversation ID
+        final userIds = [user.uid, receiverId]..sort();
+        if (userIds.length != 2 || userIds.contains(null) || userIds.contains('')) {
+          throw Exception('Invalid user IDs: $userIds');
         }
-        batch.update(conversationRef, {
-          'lastMessage': trimmedText,
-          'timestamp': Timestamp.now(),
-        });
-        debugPrint('Updating conversation: $conversationId');
-      }
+        final conversationId = userIds.join('_');
+        debugPrint('Conversation ID: $conversationId, participants: $userIds');
 
-      // Add message
-      batch.set(messageRef, message.toFirestore()..['messageId'] = messageRef.id);
-      debugPrint('Preparing to send message: ${messageRef.id} to $receiverId');
+        // // Create message
+        // final message = MessageModel(
+        //   messageId: '',
+        //   senderId: user.uid,
+        //   receiverId: receiverId,
+        //   text: trimmedText,
+        //   timestamp: Timestamp.now(),
+        // );
 
-      // Commit batch
-      await batch.commit();
-      debugPrint('Message sent to: $receiverId, conversation: $conversationId, text: $trimmedText, messageId: ${messageRef.id}');
-    } catch (e) {
-      debugPrint('Error sending message to $receiverId: $e');
-      if (e.toString().contains('permission-denied')) {
-        throw Exception('Permission denied: Check Firestore rules for conversations or user authentication');
-      } else if (e.toString().contains('Recipient not found')) {
-        throw Exception('Recipient profile not found: $receiverId');
-      } else if (e.toString().contains('network')) {
-        throw Exception('Network error: Please check your internet connection.');
+        final conversationRef = _firestore.collection('conversations').doc(conversationId);
+        final messageRef = conversationRef.collection('messages').doc();
+
+        // Use batch to ensure atomic writes
+        final batch = _firestore.batch();
+
+        // Check if conversation exists
+        final conversation = await conversationRef.get();
+        if (!conversation.exists) {
+          batch.set(conversationRef, {
+            'participants': userIds,
+            'lastMessage': trimmedText,
+            'timestamp': Timestamp.now(),
+          });
+          debugPrint('Creating new conversation: $conversationId with participants: $userIds');
+        } else {
+          final participants = List<String>.from(conversation.data()?['participants'] ?? []);
+          if (!participants.contains(user.uid) || !participants.contains(receiverId)) {
+            debugPrint('Invalid participants in conversation $conversationId: $participants');
+            throw Exception('User is not a participant in this conversation');
+          }
+          batch.update(conversationRef, {
+            'lastMessage': trimmedText,
+            'timestamp': Timestamp.now(),
+          });
+          debugPrint('Updating conversation: $conversationId');
+        }
+
+        // Add message
+       // batch.set(messageRef, message.toFirestore()..['messageId'] = messageRef.id);
+        debugPrint('Preparing to send message: ${messageRef.id} to $receiverId');
+
+        // Commit batch
+        await batch.commit();
+        debugPrint('Message sent to: $receiverId, conversation: $conversationId, text: $trimmedText, messageId: ${messageRef.id}');
+        return; // Exit on success
+      } catch (e) {
+        attempt++;
+        debugPrint('Attempt $attempt failed: $e');
+        if (attempt >= retries) {
+          debugPrint('Max retries reached. Error sending message to $receiverId: $e');
+          if (e.toString().contains('permission-denied')) {
+            throw Exception('Permission denied: Check Firestore rules for conversations or user authentication');
+          } else if (e.toString().contains('Recipient not found')) {
+            throw Exception('Recipient profile not found: $receiverId');
+          } else if (e.toString().contains('network')) {
+            throw Exception('Network error: Please check your internet connection.');
+          }
+          throw Exception('Failed to send message: $e');
+        }
+        await Future.delayed(Duration(seconds: 2)); // Wait before retrying
       }
-      throw Exception('Failed to send message: $e');
     }
   }
 
@@ -648,28 +657,5 @@ class CommunityFirebaseService {
       }
       throw Exception('Failed to delete message: $e');
     }
-  }
-
-  Stream<List<MessageModel>> getMessages(String otherUserId) {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception('No authenticated user');
-    if (otherUserId.trim().isEmpty) throw Exception('Invalid otherUserId');
-
-    final userIds = [user.uid, otherUserId]..sort();
-    if (userIds.length != 2 || userIds.contains(null) || userIds.contains('')) {
-      throw Exception('Invalid user IDs: $userIds');
-    }
-    final conversationId = userIds.join('_');
-
-    return _firestore
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('messages')
-        .orderBy('timestamp', descending: false)
-        .snapshots()
-        .map((snapshot) {
-      debugPrint('Fetched messages for conversation: $conversationId, count: ${snapshot.docs.length}');
-      return snapshot.docs.map((doc) => MessageModel.fromFirestore(doc)).toList();
-    });
   }
 }

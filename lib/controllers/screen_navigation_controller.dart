@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../Community/view/community_feed_screen.dart';
 import '../utils/app_theme.dart';
-import '../views/dashboard/other_dashboard/blog/blog_view.dart';
-import '../views/dashboard/other_dashboard/faq/faq_view.dart';
-import '../views/dashboard/other_dashboard/home_view.dart';
-import '../views/dashboard/other_dashboard/profile_view.dart';
+import '../views/dashboard/blog/blog_view.dart';
+import '../views/dashboard/faq/faq_view.dart';
+import '../views/dashboard/home_view.dart';
+import '../views/dashboard/profile_view.dart';
+
 
 enum MoreMenuOption { notifications, blog, faq }
 
