@@ -4,9 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'dart:async';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../utils/app_theme.dart';
 
 class MyChatScreen extends StatefulWidget {
@@ -30,6 +27,9 @@ class _MyChatScreenState extends State<MyChatScreen> {
   final ImagePicker _picker = ImagePicker();
   late Stream<QuerySnapshot> _messagesStream;
   String? _currentUserId;
+  bool _isSending = false;
+  String? _errorMessage;
+  static const int _maxMessageLength = 500;
 
   @override
   void initState() {
@@ -45,6 +45,9 @@ class _MyChatScreenState extends State<MyChatScreen> {
         .collection('messages')
         .orderBy('timestamp', descending: true)
         .snapshots();
+    _messageController.addListener(() {
+      setState(() {}); // Update character count
+    });
   }
 
   String _getChatId(String userId1, String userId2) {
@@ -54,7 +57,36 @@ class _MyChatScreenState extends State<MyChatScreen> {
   }
 
   Future<void> _sendMessage({String? text, String? imageBase64}) async {
-    if (_currentUserId == null || (text?.isEmpty ?? true) && imageBase64 == null) return;
+    if (_currentUserId == null || (text?.isEmpty ?? true) && imageBase64 == null) {
+      setState(() {
+        _errorMessage = 'Please enter a message or select an image';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a message or select an image'),
+          backgroundColor: Color(0xFFD32F2F),
+        ),
+      );
+      return;
+    }
+
+    if (text != null && text.length > _maxMessageLength) {
+      setState(() {
+        _errorMessage = 'Message exceeds $_maxMessageLength characters';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Message exceeds 500 characters'),
+          backgroundColor: Color(0xFFD32F2F),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSending = true;
+      _errorMessage = null;
+    });
 
     final message = {
       'senderId': _currentUserId,
@@ -71,27 +103,70 @@ class _MyChatScreenState extends State<MyChatScreen> {
           .collection('messages')
           .add(message);
       _messageController.clear();
-    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to send message: $e', style: Theme.of(context).textTheme.bodyMedium),
-          backgroundColor: AppTheme.errorColor,
+        const SnackBar(
+          content: Text('Message sent'),
+          backgroundColor: Color(0xFFFF6D00),
         ),
       );
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to send message: $e';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send message: $e'),
+          backgroundColor: const Color(0xFFD32F2F),
+        ),
+      );
+    } finally {
+      setState(() => _isSending = false);
     }
   }
 
   Future<void> _pickAndUploadImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image == null) return;
-
     try {
+      final source = await showDialog<ImageSource>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Select Image Source'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, ImageSource.gallery),
+              child: const Text('Gallery'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, ImageSource.camera),
+              child: const Text('Camera'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+
+      if (source == null) return;
+
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 80,
+        maxWidth: 800,
+        maxHeight: 800,
+      );
+      if (image == null) return;
+
       final bytes = await image.readAsBytes();
       if (bytes.length > 1 * 1024 * 1024) {
+        setState(() {
+          _errorMessage = 'Image size exceeds 1MB limit';
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Image size exceeds 1MB limit', style: Theme.of(context).textTheme.bodyMedium),
-            backgroundColor: AppTheme.errorColor,
+          const SnackBar(
+            content: Text('Image size exceeds 1MB limit'),
+            backgroundColor: Color(0xFFD32F2F),
           ),
         );
         return;
@@ -99,10 +174,13 @@ class _MyChatScreenState extends State<MyChatScreen> {
       final imageBase64 = base64Encode(bytes);
       await _sendMessage(imageBase64: imageBase64);
     } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to process image: $e';
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to process image: $e', style: Theme.of(context).textTheme.bodyMedium),
-          backgroundColor: AppTheme.errorColor,
+          content: Text('Failed to process image: $e'),
+          backgroundColor: const Color(0xFFD32F2F),
         ),
       );
     }
@@ -113,7 +191,7 @@ class _MyChatScreenState extends State<MyChatScreen> {
     final date = timestamp.toDate();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(Duration(days: 1));
+    final yesterday = today.subtract(const Duration(days: 1));
     final messageDate = DateTime(date.year, date.month, date.day);
 
     if (messageDate == today) {
@@ -134,111 +212,219 @@ class _MyChatScreenState extends State<MyChatScreen> {
   Widget build(BuildContext context) {
     return Theme(
       data: AppTheme.theme,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.primaryColor,
-              AppTheme.secondaryColor,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text(
-                widget.recipientName,
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.white,
-                ),
-              ),
-              flexibleSpace: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.secondaryColor,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              ),
-              elevation: 0,
-              iconTheme: const IconThemeData(
-                color: AppTheme.white, // Set back button to white
-              ),
-            ),
-            body: Column(
-              children: [
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: _messagesStream,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Text(
-                            'Error: ${snapshot.error}',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        );
-                      }
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      final messages = snapshot.data!.docs;
-                      String? lastDate;
-
-                      return ListView.builder(
-                        reverse: true,
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) {
-                          final message = messages[index].data() as Map<String, dynamic>;
-                          final timestamp = message['timestamp'] as Timestamp?;
-                          final currentDate = _formatTimestamp(timestamp);
-                          final isSender = message['senderId'] == _currentUserId;
-                          final showDateHeader = lastDate != currentDate;
-
-                          lastDate = currentDate;
-
-                          return Column(
-                            children: [
-                              if (showDateHeader)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: AppTheme.paddingSmall),
-                                  child: Card(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: AppTheme.paddingMedium,
-                                        vertical: AppTheme.paddingSmall,
-                                      ),
-                                      child: Text(
-                                        currentDate,
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          color: Colors.black54,
-                                        ),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Stack(
+          children: [
+            _buildBackground(),
+            SafeArea(
+              child: Column(
+                children: [
+                  _buildAppBar(),
+                  if (_errorMessage != null)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      color: const Color(0xFFD32F2F),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  Expanded(
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: _messagesStream,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: Color(0xFFD32F2F),
+                                  size: 48,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Error: ${snapshot.error}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0xFFD32F2F),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                Semantics(
+                                  label: 'Retry Button',
+                                  child: ElevatedButton(
+                                    onPressed: () => setState(() {
+                                      _messagesStream = _firestore
+                                          .collection('chats')
+                                          .doc(_getChatId(_currentUserId!, widget.recipientId))
+                                          .collection('messages')
+                                          .orderBy('timestamp', descending: true)
+                                          .snapshots();
+                                    }),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFFF6D00),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                    ),
+                                    child: const Text(
+                                      'Retry',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),
                                 ),
-                              _buildMessageBubble(message, isSender),
-                            ],
+                              ],
+                            ),
                           );
-                        },
-                      );
-                    },
+                        }
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6D00)),
+                            ),
+                          );
+                        }
+
+                        final messages = snapshot.data!.docs;
+                        String? lastDate;
+
+                        return ListView.builder(
+                          reverse: true,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          itemCount: messages.length,
+                          itemBuilder: (context, index) {
+                            final message = messages[index].data() as Map<String, dynamic>;
+                            final timestamp = message['timestamp'] as Timestamp?;
+                            final currentDate = _formatTimestamp(timestamp);
+                            final isSender = message['senderId'] == _currentUserId;
+                            final showDateHeader = lastDate != currentDate;
+
+                            lastDate = currentDate;
+
+                            return Column(
+                              children: [
+                                if (showDateHeader)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.1),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        currentDate,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF757575),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                _buildMessageBubble(message, isSender),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
-                _buildInputArea(),
-              ],
+                  _buildInputArea(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackground() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFE6E0), Color(0xFFFFF3F0)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -50,
+            left: -50,
+            child: CircleAvatar(
+              radius: 100,
+              backgroundColor: const Color(0xFFFFD6CC).withOpacity(0.5),
             ),
           ),
+          Positioned(
+            bottom: -70,
+            right: -70,
+            child: CircleAvatar(
+              radius: 120,
+              backgroundColor: const Color(0xFFFFD6CC).withOpacity(0.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFF6D00), Color(0xFFFF8A50)],
         ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Semantics(
+            label: 'Back Button',
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+              onPressed: () => Navigator.pop(context),
+              tooltip: 'Back',
+            ),
+          ),
+          Text(
+            widget.recipientName,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 48), // Spacer for symmetry
+        ],
       ),
     );
   }
@@ -250,42 +436,54 @@ class _MyChatScreenState extends State<MyChatScreen> {
 
     return Align(
       alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(
-          vertical: AppTheme.paddingSmall,
-          horizontal: AppTheme.paddingMedium,
-        ),
-        decoration: isSender
-            ? BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.primaryColor,
-              AppTheme.primaryColor.withOpacity(0.8),
+      child: Semantics(
+        label: isSender ? 'Sent message' : 'Received message',
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: isSender
+                ? const LinearGradient(
+              colors: [
+                Color(0xFFFF6D00),
+                Color(0xFFFF8A50),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            )
+                : null,
+            color: isSender ? null : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(12),
-        )
-            : AppTheme.cardDecoration,
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.paddingMedium),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
           child: Column(
             crossAxisAlignment: isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               if (imageBase64 != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: AppTheme.paddingSmall),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.memory(
-                      base64Decode(imageBase64),
-                      width: 200,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Text(
-                        'Failed to load image',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Semantics(
+                    label: 'Message image',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.memory(
+                        base64Decode(imageBase64),
+                        width: 200,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Text(
+                          'Failed to load image',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFFD32F2F),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -293,15 +491,17 @@ class _MyChatScreenState extends State<MyChatScreen> {
               if (text != null && text.isNotEmpty)
                 Text(
                   text,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: isSender ? AppTheme.white : Colors.black87,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isSender ? Colors.white : const Color(0xFF212121),
                   ),
                 ),
-              const SizedBox(height: AppTheme.paddingSmall),
+              const SizedBox(height: 6),
               Text(
                 _formatMessageTime(timestamp),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isSender ? AppTheme.white.withOpacity(0.7) : Colors.black54,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isSender ? Colors.white.withOpacity(0.7) : const Color(0xFF757575),
                 ),
               ),
             ],
@@ -312,34 +512,85 @@ class _MyChatScreenState extends State<MyChatScreen> {
   }
 
   Widget _buildInputArea() {
-    return Card(
-      margin: const EdgeInsets.all(AppTheme.paddingSmall),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.paddingSmall,
-          vertical: AppTheme.paddingSmall,
-        ),
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.photo, color: AppTheme.primaryColor),
-              onPressed: _pickAndUploadImage,
-            ),
-            Expanded(
-              child: TextField(
-                controller: _messageController,
-                decoration: const InputDecoration(
-                  hintText: 'Type a message...',
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      margin: const EdgeInsets.all(12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Semantics(
+                label: 'Pick Image Button',
+                child: IconButton(
+                  icon: const Icon(Icons.photo, color: Color(0xFFFF6D00)),
+                  onPressed: _isSending ? null : _pickAndUploadImage,
+                  tooltip: 'Pick Image',
                 ),
-                style: Theme.of(context).textTheme.bodyLarge,
               ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    TextField(
+                      controller: _messageController,
+                      maxLength: _maxMessageLength,
+                      decoration: const InputDecoration(
+                        hintText: 'Type a message...',
+                        hintStyle: TextStyle(color: Color(0xFF757575), fontSize: 16),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.fromLTRB(8, 12, 8, 24),
+                        counterText: '', // Hide default counter
+                      ),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF212121),
+                      ),
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (value) {
+                        if (!_isSending) {
+                          _sendMessage(text: _messageController.text.trim());
+                        }
+                      },
+                    ),
+                    Positioned(
+                      bottom: 4,
+                      right: 8,
+                      child: Text(
+                        '${_messageController.text.length}/$_maxMessageLength',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF757575),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Semantics(
+                label: 'Send Message Button',
+                child: IconButton(
+                  icon: const Icon(Icons.send, color: Color(0xFFFF6D00)),
+                  onPressed: _isSending ? null : () => _sendMessage(text: _messageController.text.trim()),
+                  tooltip: 'Send',
+                ),
+              ),
+            ],
+          ),
+          if (_isSending)
+            const LinearProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6D00)),
             ),
-            IconButton(
-              icon: const Icon(Icons.send, color: AppTheme.primaryColor),
-              onPressed: () => _sendMessage(text: _messageController.text.trim()),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

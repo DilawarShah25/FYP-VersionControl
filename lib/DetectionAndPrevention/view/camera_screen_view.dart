@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:math' as math;
 import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
@@ -30,6 +31,7 @@ class _CameraScreenState extends State<CameraScreen>
   late Animation<double> _scanAnimation;
   int _selectedCameraIndex = 0;
   bool _isScanning = false;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -66,6 +68,52 @@ class _CameraScreenState extends State<CameraScreen>
     setState(() {});
   }
 
+  void _pickImageFromGallery() async {
+    if (_isScanning) return;
+
+    setState(() => _isScanning = true);
+
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null) {
+        setState(() => _isScanning = false);
+        return;
+      }
+
+      _scanAnimationController.forward(from: 0).whenComplete(() {
+        final imageFileObj = File(image.path);
+        widget.controller.model.setImage(imageFileObj);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetectionResultView(
+              title: 'Detection Results',
+              controller: widget.controller,
+            ),
+          ),
+        );
+
+        setState(() => _isScanning = false);
+        _scanAnimationController.reset();
+      });
+    } catch (e) {
+      setState(() => _isScanning = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error picking image: $e',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppTheme.white,
+            ),
+          ),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _scanAnimationController.dispose();
@@ -91,62 +139,77 @@ class _CameraScreenState extends State<CameraScreen>
                   isScanning: _isScanning,
                   scanProgress: _scanAnimation.value,
                 ),
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 10,
+                  left: AppTheme.paddingSmall,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: AppTheme.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: AppTheme.paddingLarge),
-                    child: FloatingActionButton(
-                      onPressed: () async {
-                        if (_isScanning) return;
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        FloatingActionButton(
+                          onPressed: () async {
+                            if (_isScanning) return;
 
-                        setState(() => _isScanning = true);
-                        XFile? imageFile;
+                            setState(() => _isScanning = true);
+                            XFile? imageFile;
 
-                        try {
-                          imageFile = await _cameraController.takePicture();
-                        } catch (e) {
-                          setState(() => _isScanning = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Error capturing image: $e',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: AppTheme.white,
+                            try {
+                              imageFile = await _cameraController.takePicture();
+                            } catch (e) {
+                              setState(() => _isScanning = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Error capturing image: $e',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: AppTheme.white,
+                                    ),
+                                  ),
+                                  backgroundColor: AppTheme.errorColor,
                                 ),
-                              ),
-                              backgroundColor: AppTheme.errorColor,
-                            ),
-                          );
-                          return;
-                        }
+                              );
+                              return;
+                            }
 
-                        if (imageFile == null) {
-                          setState(() => _isScanning = false);
-                          return;
-                        }
+                            _scanAnimationController.forward(from: 0).whenComplete(() {
+                              final imageFileObj = File(imageFile!.path);
+                              widget.controller.model.setImage(imageFileObj);
 
-                        _scanAnimationController.forward(from: 0).whenComplete(() {
-                          final imageFileObj = File(imageFile!.path);
-                          widget.controller.model.setImage(imageFileObj);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DetectionResultView(
+                                    title: 'Detection Results',
+                                    controller: widget.controller,
+                                  ),
+                                ),
+                              );
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DetectionResultView(
-                                title: 'Detection Results',
-                                controller: widget.controller,
-                              ),
-                            ),
-                          );
-
-                          setState(() => _isScanning = false);
-                          _scanAnimationController.reset();
-                        });
-                      },
-                      backgroundColor: AppTheme.white,
-                      foregroundColor: AppTheme.primaryColor,
-                      child: const Icon(Icons.camera),
+                              setState(() => _isScanning = false);
+                              _scanAnimationController.reset();
+                            });
+                          },
+                          backgroundColor: AppTheme.white,
+                          foregroundColor: AppTheme.primaryColor,
+                          child: const Icon(Icons.camera),
+                        ),
+                        const SizedBox(width: AppTheme.paddingMedium),
+                        FloatingActionButton(
+                          onPressed: _pickImageFromGallery,
+                          backgroundColor: AppTheme.white,
+                          foregroundColor: AppTheme.primaryColor,
+                          child: const Icon(Icons.photo_library),
+                        ),
+                      ],
                     ),
                   ),
                 ),

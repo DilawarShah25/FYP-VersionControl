@@ -25,7 +25,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
 
   String? _errorMessage;
   String? _phoneCountryCode;
-  String _selectedRole = 'User';
+  String _selectedRole = 'User'; // Default role
   bool _showPassword = false;
   bool _showConfirmPassword = false;
   bool _isLoading = false;
@@ -41,11 +41,10 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     );
     _fadeAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeIn);
     _animationController.forward();
-    // Set status bar style
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: Brightness.dark,
       ),
     );
   }
@@ -154,366 +153,420 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
     return Theme(
       data: AppTheme.theme,
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        backgroundColor: AppTheme.backgroundColor,
-        body: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: AppTheme.paddingMedium),
-                  _buildForm(),
-                ],
+        backgroundColor: Colors.white,
+        body: Stack(
+          children: [
+            _buildBackground(),
+            SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 24),
+                        _buildForm(),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBackground() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFE6E0), Color(0xFFFFF3F0)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -50,
+            left: -50,
+            child: CircleAvatar(
+              radius: 100,
+              backgroundColor: const Color(0xFFFFD6CC).withOpacity(0.5),
+            ),
+          ),
+          Positioned(
+            bottom: -70,
+            right: -70,
+            child: CircleAvatar(
+              radius: 120,
+              backgroundColor: const Color(0xFFFFD6CC).withOpacity(0.5),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        AppTheme.paddingLarge,
-        MediaQuery.of(context).padding.top + AppTheme.paddingLarge,
-        AppTheme.paddingLarge,
-        AppTheme.paddingLarge,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFFFF6D00), size: 24),
+          onPressed: () => Navigator.pop(context),
+          padding: const EdgeInsets.all(8),
         ),
-        // For solid color, uncomment below and comment gradient
-        // color: AppTheme.primaryColor,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        const Text(
+          'Sign Up',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 48,
-            backgroundColor: AppTheme.white,
-            child: Icon(
-              Icons.person_add_rounded,
-              size: 48,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-          const SizedBox(height: AppTheme.paddingMedium),
-          Text(
-            'Create Account',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              color: AppTheme.white,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppTheme.paddingSmall),
-          Text(
-            'Join the Hair Loss System',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppTheme.white.withOpacity(0.9),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 48), // Spacer for symmetry
+      ],
     );
   }
 
   Widget _buildForm() {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppTheme.paddingMedium,
-        vertical: AppTheme.paddingSmall,
-      ),
-      decoration: AppTheme.cardDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(AppTheme.paddingLarge),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_rounded, color: AppTheme.primaryColor),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.5),
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-                style: Theme.of(context).textTheme.bodyMedium,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Enter your name';
-                  }
-                  if (value.trim().length < 2) {
-                    return 'Name must be 2+ chars';
-                  }
-                  return null;
-                },
-                textInputAction: TextInputAction.next,
+              ],
+            ),
+            child: TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                hintText: 'John Doe',
+                hintStyle: TextStyle(color: Color(0xFF757575), fontSize: 16),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              const SizedBox(height: AppTheme.paddingMedium),
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email_rounded, color: AppTheme.primaryColor),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.5),
+              style: const TextStyle(fontSize: 16),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Enter your name';
+                }
+                if (value.trim().length < 2) {
+                  return 'Name must be 2+ chars';
+                }
+                return null;
+              },
+              textInputAction: TextInputAction.next,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-                keyboardType: TextInputType.emailAddress,
-                style: Theme.of(context).textTheme.bodyMedium,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Enter your email';
-                  }
-                  if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
-                    return 'Enter a valid email';
-                  }
-                  return null;
-                },
-                textInputAction: TextInputAction.next,
+              ],
+            ),
+            child: TextFormField(
+              controller: _emailController,
+              decoration: const InputDecoration(
+                hintText: 'johndoe@gmail.com',
+                hintStyle: TextStyle(color: Color(0xFF757575), fontSize: 16),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              const SizedBox(height: AppTheme.paddingMedium),
-              IntlPhoneField(
-                controller: _phoneNumberPartController,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.5),
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(fontSize: 16),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Enter your email';
+                }
+                if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                  return 'Enter a valid email';
+                }
+                return null;
+              },
+              textInputAction: TextInputAction.next,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-                initialCountryCode: 'US',
-                style: Theme.of(context).textTheme.bodyMedium,
-                onCountryChanged: (country) {
-                  setState(() => _phoneCountryCode = '+${country.dialCode}');
-                },
-                validator: (phone) {
-                  if (phone == null || phone.number.isEmpty) {
-                    return 'Enter a phone number';
-                  }
-                  final number = phone.number;
-                  if (!RegExp(r'^[1-9][0-9]{5,11}$').hasMatch(number)) {
-                    return '6-12 digits, no leading 0';
-                  }
-                  return null;
-                },
-                textInputAction: TextInputAction.next,
+              ],
+            ),
+            child: IntlPhoneField(
+              controller: _phoneNumberPartController,
+              decoration: const InputDecoration(
+                hintText: 'Phone Number',
+                hintStyle: TextStyle(color: Color(0xFF757575), fontSize: 16),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              const SizedBox(height: AppTheme.paddingMedium),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_rounded, color: AppTheme.primaryColor),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _showPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                      color: AppTheme.primaryColor,
-                    ),
-                    onPressed: () => setState(() => _showPassword = !_showPassword),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.5),
+              initialCountryCode: 'US',
+              style: const TextStyle(fontSize: 16),
+              onCountryChanged: (country) {
+                setState(() => _phoneCountryCode = '+${country.dialCode}');
+              },
+              validator: (phone) {
+                if (phone == null || phone.number.isEmpty) {
+                  return 'Enter a phone number';
+                }
+                final number = phone.number;
+                if (!RegExp(r'^[1-9][0-9]{5,11}$').hasMatch(number)) {
+                  return '6-12 digits, no leading 0';
+                }
+                return null;
+              },
+              textInputAction: TextInputAction.next,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-                obscureText: !_showPassword,
-                style: Theme.of(context).textTheme.bodyMedium,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Enter a password';
-                  }
-                  if (value.length < 6 || !RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
-                    return '6+ chars with a special char';
-                  }
-                  return null;
-                },
-                textInputAction: TextInputAction.next,
-              ),
-              const SizedBox(height: AppTheme.paddingMedium),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Confirm Password',
-                  prefixIcon: Icon(Icons.lock_rounded, color: AppTheme.primaryColor),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _showConfirmPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                      color: AppTheme.primaryColor,
-                    ),
-                    onPressed: () => setState(() => _showConfirmPassword = !_showConfirmPassword),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.accentColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: AppTheme.accentColor.withOpacity(0.5),
+              ],
+            ),
+            child: Semantics(
+              label: 'Role Selection',
+              child: DropdownButtonFormField<String>(
+                value: _selectedRole,
+                decoration: const InputDecoration(
+                  hintText: 'Select Role',
+                  hintStyle: TextStyle(color: Color(0xFF757575), fontSize: 16),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-                obscureText: !_showConfirmPassword,
-                style: Theme.of(context).textTheme.bodyMedium,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Confirm your password';
-                  }
-                  if (value != _passwordController.text) {
-                    return 'Passwords do not match';
-                  }
-                  return null;
-                },
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _register(),
-              ),
-              const SizedBox(height: AppTheme.paddingMedium),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: ['User', 'Admin'].map((role) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.paddingSmall),
-                    child: ChoiceChip(
-                      label: Text(role, style: Theme.of(context).textTheme.bodyMedium),
-                      selected: _selectedRole == role,
-                      onSelected: (selected) => setState(() => _selectedRole = role),
-                      selectedColor: AppTheme.secondaryColor,
-                      backgroundColor: AppTheme.accentColor,
-                      labelStyle: TextStyle(
-                        color: _selectedRole == role ? AppTheme.white : Colors.black87,
-                      ),
-                      elevation: 2,
-                      pressElevation: 4,
-                    ),
-                  );
-                }).toList(),
-              ),
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppTheme.paddingMedium, bottom: AppTheme.paddingSmall),
-                  child: Text(
-                    _errorMessage!,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.errorColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, color: Colors.black),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'User',
+                    child: Text('User'),
                   ),
-                ),
-              const SizedBox(height: AppTheme.paddingMedium),
-              _isLoading
-                  ? Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                ),
-              )
-                  : ElevatedButton(
-                onPressed: _register,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: AppTheme.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                ),
-                child: Text(
-                  'Register',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppTheme.paddingMedium),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Already have an account? ',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(foregroundColor: AppTheme.secondaryColor),
-                    child: Text(
-                      'Login',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  DropdownMenuItem(
+                    value: 'Doctor',
+                    child: Text('Doctor'),
                   ),
                 ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedRole = value!;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a role';
+                  }
+                  return null;
+                },
+                dropdownColor: Colors.white,
+                iconEnabledColor: const Color(0xFFFF6D00),
+                focusColor: const Color(0xFFFF6D00),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextFormField(
+              controller: _passwordController,
+              decoration: InputDecoration(
+                hintText: 'Password',
+                hintStyle: const TextStyle(color: Color(0xFF757575), fontSize: 16),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                suffixIcon: Semantics(
+                  label: _showPassword ? 'Hide password' : 'Show password',
+                  child: IconButton(
+                    icon: Icon(
+                      _showPassword ? Icons.visibility : Icons.visibility_off,
+                      color: const Color(0xFFFF6D00),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _showPassword = !_showPassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              obscureText: !_showPassword,
+              style: const TextStyle(fontSize: 16),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Enter a password';
+                }
+                if (value.length < 6 || !RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+                  return '6+ chars with a special char';
+                }
+                return null;
+              },
+              textInputAction: TextInputAction.next,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextFormField(
+              controller: _confirmPasswordController,
+              decoration: InputDecoration(
+                hintText: 'Confirm Password',
+                hintStyle: const TextStyle(color: Color(0xFF757575), fontSize: 16),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                suffixIcon: Semantics(
+                  label: _showConfirmPassword ? 'Hide confirm password' : 'Show confirm password',
+                  child: IconButton(
+                    icon: Icon(
+                      _showConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                      color: const Color(0xFFFF6D00),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _showConfirmPassword = !_showConfirmPassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              obscureText: !_showConfirmPassword,
+              style: const TextStyle(fontSize: 16),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Confirm your password';
+                }
+                if (value != _passwordController.text) {
+                  return 'Passwords do not match';
+                }
+                return null;
+              },
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _register(),
+            ),
+          ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          const SizedBox(height: 16),
+          _isLoading
+              ? const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6D00)),
+            ),
+          )
+              : Semantics(
+            label: 'Sign Up Button',
+            child: ElevatedButton(
+              onPressed: _register,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6D00),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              ),
+              child: const Text(
+                'SIGN UP',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'By clicking the button, you accept ScalpSense’s Terms of Service and Privacy Policy',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFF757575),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Already have an account? ',
+                style: TextStyle(fontSize: 14, color: Colors.black),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'SIGN IN',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFFF6D00),
+                  ),
+                ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

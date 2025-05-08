@@ -5,13 +5,14 @@ import 'dart:convert';
 class DetectionResultModel {
   File? image;
   bool isProcessing = false;
-  String? predictedLabel;
-  double? confidence;
+
+  String? validity;
+  String? stagePrediction;
+  String? diseasePrediction;
+
   int totalUploads = 0;
   int withoutProblems = 0;
   int diagnosedProblems = 0;
-
-  set result(String result) {}
 
   Future<void> sendImageForPrediction() async {
     if (image == null) return;
@@ -29,14 +30,24 @@ class DetectionResultModel {
         final responseBody = await response.stream.bytesToString();
         final responseData = json.decode(responseBody);
 
-        predictedLabel = responseData['predicted_label'];
-        confidence = (responseData['confidence'] as num).toDouble(); // Ensure double
-        totalUploads++;
-        if (predictedLabel == 'normal') {
-          withoutProblems++;
+        validity = responseData['validity'];
+
+        if (validity == 'Valid Image') {
+          stagePrediction = responseData['stage_prediction'];
+          diseasePrediction = responseData['disease_prediction'];
+
+          totalUploads++;
+          if (stagePrediction?.toLowerCase() == 'normal') {
+            withoutProblems++;
+          } else {
+            diagnosedProblems++;
+          }
         } else {
-          diagnosedProblems++;
+          // Handle invalid image case
+          stagePrediction = null;
+          diseasePrediction = null;
         }
+
       } else {
         throw Exception('Failed to get prediction');
       }
@@ -49,15 +60,17 @@ class DetectionResultModel {
 
   void setImage(File? newImage) {
     image = newImage;
-    predictedLabel = null;
-    confidence = null;
+    validity = null;
+    stagePrediction = null;
+    diseasePrediction = null;
     isProcessing = false;
   }
 
   void reset() {
     image = null;
-    predictedLabel = null;
-    confidence = null;
+    validity = null;
+    stagePrediction = null;
+    diseasePrediction = null;
     isProcessing = false;
     totalUploads = 0;
     withoutProblems = 0;

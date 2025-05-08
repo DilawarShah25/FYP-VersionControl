@@ -9,9 +9,6 @@ class PostModel {
   final String? imageBase64;
   final Timestamp timestamp;
   final List<String>? comments; // Made optional
-  final List<String> shares;
-  final String? location;
-  final List<String> tags;
   final Timestamp? lastEdited;
 
   PostModel({
@@ -23,9 +20,7 @@ class PostModel {
     this.imageBase64,
     required this.timestamp,
     this.comments, // Made optional
-    required this.shares,
-    this.location,
-    required this.tags,
+
     this.lastEdited,
   });
 
@@ -40,9 +35,6 @@ class PostModel {
       imageBase64: data['imageBase64'],
       timestamp: data['timestamp'] ?? Timestamp.now(),
       comments: data['comments'] != null ? List<String>.from(data['comments']) : null, // Handle null
-      shares: List<String>.from(data['shares'] ?? []),
-      location: data['location'],
-      tags: List<String>.from(data['tags'] ?? []),
       lastEdited: data['lastEdited'],
     );
   }
@@ -56,9 +48,6 @@ class PostModel {
     'imageBase64': imageBase64,
     'timestamp': timestamp,
     if (comments != null) 'comments': comments, // Only include if not null
-    'shares': shares,
-    'location': location,
-    'tags': tags,
     'lastEdited': lastEdited,
   };
 
@@ -85,9 +74,6 @@ class PostModel {
       imageBase64: imageBase64 ?? this.imageBase64,
       timestamp: timestamp ?? this.timestamp,
       comments: comments ?? this.comments,
-      shares: shares ?? this.shares,
-      location: location ?? this.location,
-      tags: tags ?? this.tags,
       lastEdited: lastEdited ?? this.lastEdited,
     );
   }

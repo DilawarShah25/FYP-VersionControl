@@ -30,8 +30,8 @@ class FirestoreService {
         'showEmail': showContactDetails,
         'showPhone': showContactDetails,
         // Preserve existing fields not provided in the update
-        'username': FieldValue.serverTimestamp(), // Placeholder to avoid overwriting
-        'role': FieldValue.serverTimestamp(), // Placeholder to avoid overwriting
+        'username': FieldValue.serverTimestamp(),
+        'role': FieldValue.serverTimestamp(),
         'uid': userId,
         'createdAt': FieldValue.serverTimestamp(),
         'isEmailVerified': false,
@@ -65,12 +65,17 @@ class FirestoreService {
       );
     } catch (e) {
       print('Error fetching user profile: $e');
-      return null;
+      throw e;
     }
   }
 
   Future<void> updateProfile(String uid, Map<String, dynamic> data) async {
-    await _users.doc(uid).set(data, SetOptions(merge: true));
+    try {
+      await _users.doc(uid).set(data, SetOptions(merge: true));
+    } catch (e) {
+      print('Error updating user profile: $e');
+      throw e;
+    }
   }
 
   Future<List<ProfileData>> getAllProfiles() async {
@@ -94,13 +99,18 @@ class FirestoreService {
       }).toList();
     } catch (e) {
       print('Error fetching profiles: $e');
-      return [];
+      throw e;
     }
   }
 
   Future<void> addClinic(Clinic clinic) async {
     try {
+      // Validate location before adding
+      if (clinic.location.latitude == 0.0 && clinic.location.longitude == 0.0) {
+        throw Exception('Invalid clinic location: (${clinic.location.latitude}, ${clinic.location.longitude})');
+      }
       await _clinics.doc(clinic.id).set(clinic.toJson());
+      print('Clinic added successfully: ${clinic.name} at (${clinic.location.latitude}, ${clinic.location.longitude})');
     } catch (e) {
       print('Error adding clinic: $e');
       throw e;
@@ -110,29 +120,50 @@ class FirestoreService {
   Future<List<Clinic>> getAllClinics() async {
     try {
       final snapshot = await _clinics.get();
-      return snapshot.docs.map((doc) => Clinic.fromJson(doc.data() as Map<String, dynamic>, doc.id)).toList();
+      final clinics = snapshot.docs.map((doc) {
+        try {
+          final clinic = Clinic.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+          // Log invalid locations for debugging
+          if (clinic.location.latitude == 0.0 && clinic.location.longitude == 0.0) {
+            print('Warning: Clinic "${clinic.name}" has invalid location: (${clinic.location.latitude}, ${clinic.location.longitude})');
+          }
+          return clinic;
+        } catch (e) {
+          print('Error parsing clinic document ${doc.id}: $e');
+          // Skip invalid documents
+          return null;
+        }
+      }).where((clinic) => clinic != null).cast<Clinic>().toList();
+      print('Fetched ${clinics.length} clinics from Firestore');
+      return clinics;
     } catch (e) {
       print('Error fetching clinics: $e');
-      return [];
+      throw e;
     }
   }
 
   Future<List<Clinic>> getClinicsWithinRadius(LatLng userLocation, double radiusInKm) async {
     try {
       final allClinics = await getAllClinics();
-      return allClinics.where((clinic) {
+      final nearbyClinics = allClinics.where((clinic) {
+        // Skip clinics with invalid locations
+        if (clinic.location.latitude == 0.0 && clinic.location.longitude == 0.0) {
+          return false;
+        }
         double distanceInKm = _calculateDistance(userLocation, clinic.location);
         return distanceInKm <= radiusInKm;
       }).toList();
+      print('Found ${nearbyClinics.length} clinics within $radiusInKm km');
+      return nearbyClinics;
     } catch (e) {
       print('Error filtering clinics by radius: $e');
-      return [];
+      throw e;
     }
   }
 
   double _calculateDistance(LatLng point1, LatLng point2) {
     const double earthRadius = 6371; // Radius of the Earth in kilometers
-    double lat1 = point1.latitude * (pi / 180); // Convert to radians, using pi from dart:math
+    double lat1 = point1.latitude * (pi / 180);
     double lon1 = point1.longitude * (pi / 180);
     double lat2 = point2.latitude * (pi / 180);
     double lon2 = point2.longitude * (pi / 180);
@@ -144,6 +175,6 @@ class FirestoreService {
         cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2);
     double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
-    return earthRadius * c; // Distance in kilometers
+    return earthRadius * c;
   }
 }

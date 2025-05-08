@@ -81,8 +81,4 @@ class CommunityController {
   Stream<bool> hasLikedPostStream(String postId, String userId) {
     return _service.hasLikedPostStream(postId, userId);
   }
-
-  Future<void> sharePost(String postId, String userId) async {
-    await _service.sharePost(postId, userId);
-  }
 }

@@ -69,7 +69,7 @@ class AuthService {
         print('Validation failed: Name must be at least 2 characters');
         return {'error': 'Name must be at least 2 characters'};
       }
-      if (!['User', 'Admin'].contains(role)) {
+      if (!['User', 'Doctor'].contains(role)) {
         print('Validation failed: Invalid role');
         return {'error': 'Invalid role'};
       }

@@ -164,20 +164,23 @@ class CommunityFirebaseService {
     if (user == null) throw Exception('User not logged in');
     final trimmedText = textContent.trim();
     final trimmedUserName = userName.trim();
-    if (trimmedText.isEmpty && image == null)
+    if (trimmedText.isEmpty && image == null) {
       throw Exception('Post content cannot be empty');
+    }
     if (trimmedUserName.isEmpty) throw Exception('User name cannot be empty');
-    if (user.uid != _auth.currentUser!.uid)
+    if (user.uid != _auth.currentUser!.uid) {
       throw Exception(
           'User ID mismatch: Provided ${user.uid} does not match authenticated user ${_auth.currentUser!.uid}');
+    }
 
     String? imageBase64;
     if (image != null) {
       final file = File(image.path);
       if (!await file.exists()) throw Exception('Image file not found');
       final imageBytes = await file.readAsBytes();
-      if (imageBytes.length > 2 * 1024 * 1024)
+      if (imageBytes.length > 2 * 1024 * 1024) {
         throw Exception('Image size exceeds 2MB');
+      }
       imageBase64 = base64Encode(imageBytes);
     }
 
@@ -189,9 +192,6 @@ class CommunityFirebaseService {
       textContent: trimmedText.isEmpty ? ' ' : trimmedText,
       imageBase64: imageBase64,
       timestamp: Timestamp.now(),
-      shares: [],
-      location: location,
-      tags: tags ?? [],
     );
 
     try {
@@ -217,8 +217,9 @@ class CommunityFirebaseService {
       final file = File(image.path);
       if (!await file.exists()) throw Exception('Image file not found');
       final imageBytes = await file.readAsBytes();
-      if (imageBytes.length > 2 * 1024 * 1024)
+      if (imageBytes.length > 2 * 1024 * 1024) {
         throw Exception('Image size exceeds 2MB');
+      }
       imageBase64 = base64Encode(imageBytes);
     }
 
@@ -273,17 +274,19 @@ class CommunityFirebaseService {
   }
 
   Future<void> likePost(String postId, String userId) async {
-    if (userId != _auth.currentUser!.uid)
+    if (userId != _auth.currentUser!.uid) {
       throw Exception(
           'User ID mismatch: Provided $userId does not match authenticated user ${_auth.currentUser!.uid}');
+    }
     try {
       final postRef = _firestore.collection('posts').doc(postId);
       final post = await postRef.get();
       if (!post.exists) throw Exception('Post not found: $postId');
       final likeRef = postRef.collection('likes').doc(userId);
       final likeDoc = await likeRef.get();
-      if (likeDoc.exists)
+      if (likeDoc.exists) {
         throw Exception('User $userId already liked post $postId');
+      }
       await likeRef.set({
         'userId': userId,
         'createdAt': Timestamp.now(),
@@ -296,17 +299,19 @@ class CommunityFirebaseService {
   }
 
   Future<void> unlikePost(String postId, String userId) async {
-    if (userId != _auth.currentUser!.uid)
+    if (userId != _auth.currentUser!.uid) {
       throw Exception(
           'User ID mismatch: Provided $userId does not match authenticated user ${_auth.currentUser!.uid}');
+    }
     try {
       final postRef = _firestore.collection('posts').doc(postId);
       final post = await postRef.get();
       if (!post.exists) throw Exception('Post not found: $postId');
       final likeRef = postRef.collection('likes').doc(userId);
       final likeDoc = await likeRef.get();
-      if (!likeDoc.exists)
+      if (!likeDoc.exists) {
         throw Exception('User $userId has not liked post $postId');
+      }
       await likeRef.delete();
       debugPrint('Post unliked: $postId, user: $userId');
     } catch (e) {
@@ -363,28 +368,6 @@ class CommunityFirebaseService {
         .map((snapshot) => snapshot.exists);
   }
 
-  Future<void> sharePost(String postId, String userId) async {
-    if (userId != _auth.currentUser!.uid)
-      throw Exception(
-          'User ID mismatch: Provided $userId does not match authenticated user ${_auth.currentUser!.uid}');
-    try {
-      final postRef = _firestore.collection('posts').doc(postId);
-      await _firestore.runTransaction((transaction) async {
-        final post = await transaction.get(postRef);
-        if (!post.exists) throw Exception('Post not found: $postId');
-        final shares = List<String>.from(post.data()?['shares'] ?? []);
-        if (!shares.contains(userId)) {
-          shares.add(userId);
-          transaction.update(postRef, {'shares': shares});
-        }
-      });
-      debugPrint('Post shared: $postId, user: $userId');
-    } catch (e) {
-      debugPrint('Error sharing post $postId for user $userId: $e');
-      throw Exception('Failed to share post: $e');
-    }
-  }
-
   Future<void> addComment(
       String postId, String commentText, String userName, String userId) async {
     final user = _auth.currentUser;
@@ -394,9 +377,10 @@ class CommunityFirebaseService {
     if (trimmedComment.isEmpty) throw Exception('Comment cannot be empty');
     if (trimmedUserName.isEmpty) throw Exception('User name cannot be empty');
     if (userId.isEmpty) throw Exception('User ID cannot be empty');
-    if (userId != user.uid)
+    if (userId != user.uid) {
       throw Exception(
           'User ID mismatch: Provided $userId does not match authenticated user ${user.uid}');
+    }
 
     try {
       final postRef = _firestore.collection('posts').doc(postId);
@@ -589,7 +573,7 @@ class CommunityFirebaseService {
           }
           throw Exception('Failed to send message: $e');
         }
-        await Future.delayed(Duration(seconds: 2)); // Wait before retrying
+        await Future.delayed(const Duration(seconds: 2)); // Wait before retrying
       }
     }
   }

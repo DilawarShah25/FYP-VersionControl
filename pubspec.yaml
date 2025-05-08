@@ -64,7 +64,6 @@ flutter:
     - lib/assets/images/blog/home_remedy.png
     - lib/assets/images/blog/healthy_scalp.jpg
     - lib/assets/images/default_avatar.jpg
-    - assets/hair_loss_model.tflite
   fonts:
     - family: Pacifico
       fonts:

@@ -112,71 +112,176 @@ class _VerificationViewState extends State<VerificationView> {
     return Theme(
       data: AppTheme.theme,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Verify Your Email'),
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: AppTheme.white,
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(AppTheme.paddingLarge),
-          child: Center(
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppTheme.paddingLarge),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.email,
-                      size: 60,
-                      color: AppTheme.primaryColor,
-                    ),
-                    const SizedBox(height: AppTheme.paddingMedium),
-                    Text(
-                      'A verification email has been sent to ${widget.email}',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    if (_username != null) ...[
-                      const SizedBox(height: AppTheme.paddingSmall),
-                      Text(
-                        'Your username: $_username',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.secondaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+        backgroundColor: Colors.white,
+        body: Stack(
+          children: [
+            _buildBackground(),
+            SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 24),
+                      _buildContent(),
                     ],
-                    const SizedBox(height: AppTheme.paddingSmall),
-                    Text(
-                      'Waiting for verification...',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: AppTheme.paddingMedium),
-                    if (_message != null)
-                      Text(
-                        _message!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: _message!.contains('successfully')
-                              ? AppTheme.secondaryColor
-                              : AppTheme.errorColor,
-                        ),
-                      ),
-                    const SizedBox(height: AppTheme.paddingLarge),
-                    _isLoading
-                        ? const CircularProgressIndicator()
-                        : ElevatedButton(
-                      onPressed: _resendVerificationEmail,
-                      child: const Text('Resend Verification Email'),
-                    ),
-                  ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackground() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFE6E0), Color(0xFFFFF3F0)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -50,
+            left: -50,
+            child: CircleAvatar(
+              radius: 100,
+              backgroundColor: const Color(0xFFFFD6CC).withOpacity(0.5),
+            ),
+          ),
+          Positioned(
+            bottom: -70,
+            right: -70,
+            child: CircleAvatar(
+              radius: 120,
+              backgroundColor: const Color(0xFFFFD6CC).withOpacity(0.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFFFF6D00), size: 24),
+          onPressed: () => Navigator.pop(context),
+          padding: const EdgeInsets.all(8),
+        ),
+        const Text(
+          'Verify Your Email',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(width: 48), // Spacer for symmetry
+      ],
+    );
+  }
+
+  Widget _buildContent() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.email,
+            size: 60,
+            color: Color(0xFFFF6D00),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'A verification email has been sent to ${widget.email}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black,
+            ),
+          ),
+          if (_username != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Your username: $_username',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFFFF6D00),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          const Text(
+            'Waiting for verification...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF757575),
+            ),
+          ),
+          if (_message != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              _message!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: _message!.contains('successfully')
+                    ? Colors.green
+                    : Colors.red,
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          _isLoading
+              ? const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6D00)),
+            ),
+          )
+              : Semantics(
+            label: 'Resend Verification Email Button',
+            child: ElevatedButton(
+              onPressed: _resendVerificationEmail,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6D00),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              ),
+              child: const Text(
+                'RESEND VERIFICATION EMAIL',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
