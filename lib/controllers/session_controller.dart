@@ -3,19 +3,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SessionController {
   static const String _lastLoginKey = 'last_login_timestamp';
-  static const int sessionTimeoutDays = 7; // Configurable timeout
+  static const int sessionTimeoutDays = 7; // 7-day timeout
+  static SharedPreferences? _prefs;
 
-  // Save the current timestamp as last login
+  static Future<void> init() async {
+    _prefs = await SharedPreferences.getInstance();
+    debugPrint('SharedPreferences initialized');
+  }
+
+  Future<SharedPreferences> _getPrefs() async {
+    if (_prefs == null) {
+      await init();
+    }
+    return _prefs!;
+  }
+
   Future<void> saveLastLogin() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final now = DateTime.now().millisecondsSinceEpoch;
     await prefs.setInt(_lastLoginKey, now);
     debugPrint('Saved last login: ${DateTime.fromMillisecondsSinceEpoch(now)}');
   }
 
-  // Check if the session is valid
   Future<bool> isSessionValid() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     final lastLogin = prefs.getInt(_lastLoginKey);
     if (lastLogin == null) {
       debugPrint('No last login found');
@@ -23,15 +34,14 @@ class SessionController {
     }
 
     final now = DateTime.now().millisecondsSinceEpoch;
-    final timeoutMillis = sessionTimeoutDays * 24 * 60 * 60 * 1000; // Days to milliseconds
+    final timeoutMillis = sessionTimeoutDays * 24 * 60 * 60 * 1000;
     final isValid = (now - lastLogin) < timeoutMillis;
     debugPrint('Session valid: $isValid, Last login: ${DateTime.fromMillisecondsSinceEpoch(lastLogin)}');
     return isValid;
   }
 
-  // Clear session data
   Future<void> clearSession() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs();
     await prefs.remove(_lastLoginKey);
     debugPrint('Cleared session');
   }

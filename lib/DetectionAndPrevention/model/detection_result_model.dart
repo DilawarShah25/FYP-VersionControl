@@ -7,8 +7,8 @@ class DetectionResultModel {
   bool isProcessing = false;
 
   String? validity;
-  String? stagePrediction;
-  String? diseasePrediction;
+  String? prediction;
+  Map<String, double>? probabilities; // Store probabilities as a map
 
   int totalUploads = 0;
   int withoutProblems = 0;
@@ -33,21 +33,19 @@ class DetectionResultModel {
         validity = responseData['validity'];
 
         if (validity == 'Valid Image') {
-          stagePrediction = responseData['stage_prediction'];
-          diseasePrediction = responseData['disease_prediction'];
-
+          prediction = responseData['prediction'];
+          // Parse probabilities
+          probabilities = Map<String, double>.from(responseData['probabilities']);
           totalUploads++;
-          if (stagePrediction?.toLowerCase() == 'normal') {
+          if (prediction == 'Normal') {
             withoutProblems++;
           } else {
             diagnosedProblems++;
           }
         } else {
-          // Handle invalid image case
-          stagePrediction = null;
-          diseasePrediction = null;
+          prediction = null;
+          probabilities = null;
         }
-
       } else {
         throw Exception('Failed to get prediction');
       }
@@ -61,16 +59,16 @@ class DetectionResultModel {
   void setImage(File? newImage) {
     image = newImage;
     validity = null;
-    stagePrediction = null;
-    diseasePrediction = null;
+    prediction = null;
+    probabilities = null;
     isProcessing = false;
   }
 
   void reset() {
     image = null;
     validity = null;
-    stagePrediction = null;
-    diseasePrediction = null;
+    prediction = null;
+    probabilities = null;
     isProcessing = false;
     totalUploads = 0;
     withoutProblems = 0;
