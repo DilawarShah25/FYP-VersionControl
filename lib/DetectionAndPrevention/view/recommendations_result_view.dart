@@ -380,7 +380,7 @@ class _ChatInput extends StatelessWidget {
             child: TextField(
               controller: controller,
               decoration: InputDecoration(
-                hintText: 'Ask about scalp care...',
+                hintText: 'Ask AI scalp care...',
                 hintStyle: AppTheme.theme.textTheme.bodyMedium?.copyWith(
                   color: AppTheme.textSecondary.withOpacity(0.5),
                 ),

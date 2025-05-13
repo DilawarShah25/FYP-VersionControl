@@ -10,7 +10,7 @@ android {
     namespace = "com.example.camera_gallery"
     compileSdk = flutter.compileSdkVersion
 //    ndkVersion = flutter.ndkVersion
-//    ndkVersion = "25.1.8937393"
+//      ndkVersion = "27.0.12077973"
       ndkVersion "26.1.10909125"
 
     compileOptions {
