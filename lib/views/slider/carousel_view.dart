@@ -65,12 +65,12 @@ class _CarouselState extends State<Carousel> with TickerProviderStateMixin {
   }
 
   void _startAutoSlide() {
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (!_isUserInteracting && _pageController.hasClients && mounted) {
         int nextPage = (_currentPage + 1) % widget.images.length;
         _pageController.animateToPage(
           nextPage,
-          duration: const Duration(milliseconds: 500),
+          duration: const Duration(milliseconds: 800),
           curve: Curves.easeInOut,
         );
       }
@@ -96,19 +96,18 @@ class _CarouselState extends State<Carousel> with TickerProviderStateMixin {
     try {
       switch (index) {
         case 0:
-        case 1:
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const BlogView()),
           );
           break;
-        case 2:
+        case 1:
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CommunityFeedScreen()),
           );
           break;
-        case 3:
+        case 2:
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const MapScreen()),
@@ -296,7 +295,7 @@ class _CarouselState extends State<Carousel> with TickerProviderStateMixin {
                                             borderRadius: BorderRadius.circular(15),
                                             border: Border.all(
                                               color: isActive
-                                                  ? const Color(0xFFFF6D00).withOpacity(0.7)
+                                                  ? Colors.white.withOpacity(0.7)
                                                   : Colors.white.withOpacity(0.2),
                                               width: 1.5,
                                             ),
@@ -304,7 +303,7 @@ class _CarouselState extends State<Carousel> with TickerProviderStateMixin {
                                               colors: isActive
                                                   ? [
                                                 Colors.white.withOpacity(0.1),
-                                                const Color(0xFFFF6D00).withOpacity(0.2),
+                                                Colors.white.withOpacity(0.2),
                                               ]
                                                   : [
                                                 Colors.white.withOpacity(0.05),
@@ -316,7 +315,7 @@ class _CarouselState extends State<Carousel> with TickerProviderStateMixin {
                                             boxShadow: isActive
                                                 ? [
                                               BoxShadow(
-                                                color: const Color(0xFFFF6D00).withOpacity(0.5),
+                                                color: Colors.white.withOpacity(0.5),
                                                 blurRadius: 6,
                                                 spreadRadius: 2,
                                               ),
@@ -386,12 +385,12 @@ class _CarouselState extends State<Carousel> with TickerProviderStateMixin {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: _currentPage == index
-                                  ? const Color(0xFFFF6D00)
+                                  ? Colors.white
                                   : Colors.white.withOpacity(0.3),
                               boxShadow: _currentPage == index
                                   ? [
                                 BoxShadow(
-                                  color: const Color(0xFFFF6D00).withOpacity(0.6),
+                                  color: Colors.white.withOpacity(0.6),
                                   blurRadius: 6,
                                   spreadRadius: 2,
                                 ),

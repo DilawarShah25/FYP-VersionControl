@@ -12,11 +12,13 @@ import 'detection_results_view.dart';
 class CameraScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
   final DetectionResultController controller;
+  final String userId; // Added userId parameter
 
   const CameraScreen({
     Key? key,
     required this.cameras,
     required this.controller,
+    required this.userId, // Required parameter for userId
   }) : super(key: key);
 
   @override
@@ -90,6 +92,7 @@ class _CameraScreenState extends State<CameraScreen>
             builder: (context) => DetectionResultView(
               title: 'Detection Results',
               controller: widget.controller,
+              userId: widget.userId, // Pass userId to DetectionResultView
             ),
           ),
         );
@@ -190,6 +193,7 @@ class _CameraScreenState extends State<CameraScreen>
                                   builder: (context) => DetectionResultView(
                                     title: 'Detection Results',
                                     controller: widget.controller,
+                                    userId: widget.userId, // Pass userId to DetectionResultView
                                   ),
                                 ),
                               );

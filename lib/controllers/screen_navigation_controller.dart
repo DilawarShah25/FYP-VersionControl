@@ -9,7 +9,7 @@ import '../views/dashboard/home_view.dart';
 import '../views/dashboard/profile_view.dart';
 import '../controllers/session_controller.dart';
 
-enum MoreMenuOption { notifications, blog, faq, logout }
+enum MoreMenuOption { blog, faq, logout }
 
 class ScreensManager extends StatefulWidget {
   const ScreensManager({super.key});
@@ -61,7 +61,6 @@ class _ScreensManagerState extends State<ScreensManager> with SingleTickerProvid
       context: context,
       position: _calculateMenuPosition(context),
       items: [
-        _buildMenuItem(MoreMenuOption.notifications, Icons.notifications, 'Notifications', 'View Notifications'),
         _buildMenuItem(MoreMenuOption.blog, Icons.article, 'Blog', 'View Blog'),
         _buildMenuItem(MoreMenuOption.faq, Icons.help_outline, 'FAQ', 'View FAQ'),
         _buildMenuItem(MoreMenuOption.logout, Icons.logout, 'Logout', 'Log Out'),
@@ -145,14 +144,6 @@ class _ScreensManagerState extends State<ScreensManager> with SingleTickerProvid
     if (option == null) return;
 
     switch (option) {
-      case MoreMenuOption.notifications:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Notifications feature coming soon'),
-            backgroundColor: Color(0xFFFF6D00),
-          ),
-        );
-        break;
       case MoreMenuOption.blog:
         Navigator.push(context, MaterialPageRoute(builder: (_) => const BlogView()));
         break;

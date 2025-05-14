@@ -162,11 +162,7 @@ class _LoginViewState extends State<LoginView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFFF6D00), size: 24),
-          onPressed: () => Navigator.pop(context),
-          padding: const EdgeInsets.all(8),
-        ),
+        const SizedBox(width: 48), // Spacer to maintain alignment
         const Text(
           'Sign In',
           style: TextStyle(

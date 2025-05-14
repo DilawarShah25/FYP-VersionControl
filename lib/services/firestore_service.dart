@@ -29,9 +29,8 @@ class FirestoreService {
         'showContactDetails': showContactDetails,
         'showEmail': showContactDetails,
         'showPhone': showContactDetails,
-        // Preserve existing fields not provided in the update
         'username': FieldValue.serverTimestamp(),
-        'role': FieldValue.serverTimestamp(),
+        'role': 'User',
         'uid': userId,
         'createdAt': FieldValue.serverTimestamp(),
         'isEmailVerified': false,
@@ -41,7 +40,7 @@ class FirestoreService {
       await _users.doc(userId).set(userDoc, SetOptions(merge: true));
     } catch (e) {
       print('Error creating/updating user profile: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -65,7 +64,7 @@ class FirestoreService {
       );
     } catch (e) {
       print('Error fetching user profile: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -74,7 +73,7 @@ class FirestoreService {
       await _users.doc(uid).set(data, SetOptions(merge: true));
     } catch (e) {
       print('Error updating user profile: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -99,13 +98,12 @@ class FirestoreService {
       }).toList();
     } catch (e) {
       print('Error fetching profiles: $e');
-      throw e;
+      rethrow;
     }
   }
 
   Future<void> addClinic(Clinic clinic) async {
     try {
-      // Validate location before adding
       if (clinic.location.latitude == 0.0 && clinic.location.longitude == 0.0) {
         throw Exception('Invalid clinic location: (${clinic.location.latitude}, ${clinic.location.longitude})');
       }
@@ -113,7 +111,7 @@ class FirestoreService {
       print('Clinic added successfully: ${clinic.name} at (${clinic.location.latitude}, ${clinic.location.longitude})');
     } catch (e) {
       print('Error adding clinic: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -123,14 +121,12 @@ class FirestoreService {
       final clinics = snapshot.docs.map((doc) {
         try {
           final clinic = Clinic.fromJson(doc.data() as Map<String, dynamic>, doc.id);
-          // Log invalid locations for debugging
           if (clinic.location.latitude == 0.0 && clinic.location.longitude == 0.0) {
             print('Warning: Clinic "${clinic.name}" has invalid location: (${clinic.location.latitude}, ${clinic.location.longitude})');
           }
           return clinic;
         } catch (e) {
           print('Error parsing clinic document ${doc.id}: $e');
-          // Skip invalid documents
           return null;
         }
       }).where((clinic) => clinic != null).cast<Clinic>().toList();
@@ -138,7 +134,7 @@ class FirestoreService {
       return clinics;
     } catch (e) {
       print('Error fetching clinics: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -146,7 +142,6 @@ class FirestoreService {
     try {
       final allClinics = await getAllClinics();
       final nearbyClinics = allClinics.where((clinic) {
-        // Skip clinics with invalid locations
         if (clinic.location.latitude == 0.0 && clinic.location.longitude == 0.0) {
           return false;
         }
@@ -157,12 +152,12 @@ class FirestoreService {
       return nearbyClinics;
     } catch (e) {
       print('Error filtering clinics by radius: $e');
-      throw e;
+      rethrow;
     }
   }
 
   double _calculateDistance(LatLng point1, LatLng point2) {
-    const double earthRadius = 6371; // Radius of the Earth in kilometers
+    const double earthRadius = 6371;
     double lat1 = point1.latitude * (pi / 180);
     double lon1 = point1.longitude * (pi / 180);
     double lat2 = point2.latitude * (pi / 180);
@@ -176,5 +171,122 @@ class FirestoreService {
     double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
     return earthRadius * c;
+  }
+
+  Future<void> saveUploadHistory({
+    required String userId,
+    required String imageBase64,
+    required String diagnosis,
+    required Timestamp timestamp,
+  }) async {
+    try {
+      final uploadDoc = {
+        'image_base64': imageBase64,
+        'diagnosis': diagnosis,
+        'timestamp': timestamp,
+      };
+      await _users.doc(userId).collection('upload_history').add(uploadDoc);
+      print('Upload history saved for user $userId: $diagnosis');
+    } catch (e) {
+      print('Error saving upload history: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, int>> getUploadHistoryCounts(String userId) async {
+    try {
+      final snapshot = await _users.doc(userId).collection('upload_history').get();
+      int totalUploads = snapshot.docs.length;
+      int withoutProblems = 0;
+      int diagnosedProblems = 0;
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final diagnosis = data['diagnosis'] as String? ?? '';
+        if (diagnosis.toLowerCase() == 'normal') {
+          withoutProblems++;
+        } else {
+          diagnosedProblems++;
+        }
+      }
+
+      return {
+        'totalUploads': totalUploads,
+        'withoutProblems': withoutProblems,
+        'diagnosedProblems': diagnosedProblems,
+      };
+    } catch (e) {
+      print('Error fetching upload history counts: $e');
+      rethrow;
+    }
+  }
+
+  Stream<Map<String, int>> streamUploadHistoryCounts(String userId) {
+    return _users.doc(userId).collection('upload_history').snapshots().map((snapshot) {
+      int totalUploads = snapshot.docs.length;
+      int withoutProblems = 0;
+      int diagnosedProblems = 0;
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final diagnosis = data['diagnosis'] as String? ?? '';
+        if (diagnosis.toLowerCase() == 'normal') {
+          withoutProblems++;
+        } else {
+          diagnosedProblems++;
+        }
+      }
+
+      return {
+        'totalUploads': totalUploads,
+        'withoutProblems': withoutProblems,
+        'diagnosedProblems': diagnosedProblems,
+      };
+    }).handleError((e) {
+      print('Error streaming upload history counts: $e');
+      throw e;
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getUploadHistory(String userId) async {
+    try {
+      final snapshot = await _users
+          .doc(userId)
+          .collection('upload_history')
+          .orderBy('timestamp', descending: true)
+          .get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'image_base64': data['image_base64'] as String?,
+          'diagnosis': data['diagnosis'] as String?,
+          'timestamp': data['timestamp'] as Timestamp?,
+        };
+      }).toList();
+    } catch (e) {
+      print('Error fetching upload history: $e');
+      rethrow;
+    }
+  }
+
+  Stream<List<Map<String, dynamic>>> streamUploadHistory(String userId) {
+    return _users
+        .doc(userId)
+        .collection('upload_history')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'image_base64': data['image_base64'] as String?,
+          'diagnosis': data['diagnosis'] as String?,
+          'timestamp': data['timestamp'] as Timestamp?,
+        };
+      }).toList();
+    }).handleError((e) {
+      print('Error streaming upload history: $e');
+      throw e;
+    });
   }
 }

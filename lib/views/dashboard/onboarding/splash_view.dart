@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import '../../../controllers/session_controller.dart';
 import '../../../utils/app_theme.dart';
 import '../../authentication/login_view.dart';
 
@@ -15,14 +16,37 @@ class _SplashViewState extends State<SplashView> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 3), () {
+    _initializeAndNavigate();
+  }
+
+  Future<void> _initializeAndNavigate() async {
+    try {
+      // Wait for both the 3-second timer and SessionController initialization
+      await Future.wait([
+        Future.delayed(const Duration(seconds: 3)),
+        SessionController.init(), // Ensure SharedPreferences is ready
+      ]);
+
       if (mounted) {
+        // Check session validity and navigate accordingly
+        bool isSessionValid = await SessionController().isSessionValid();
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginView()),
         );
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        // Show error and still navigate to LoginView
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error during initialization: $e')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginView()),
+        );
+      }
+    }
   }
 
   @override
@@ -85,7 +109,8 @@ class _SplashViewState extends State<SplashView> {
                     letterSpacing: 1.1,
                   ),
                   textAlign: TextAlign.center,
-                  semanticsLabel: 'Predictive analysis for hair loss view and prevention.',
+                  semanticsLabel:
+                  'Predictive analysis for hair loss view and prevention.',
                 ),
                 const SizedBox(height: AppTheme.paddingLarge),
                 const CustomLoadingIndicator(),
@@ -105,7 +130,8 @@ class CustomLoadingIndicator extends StatefulWidget {
   State<CustomLoadingIndicator> createState() => _CustomLoadingIndicatorState();
 }
 
-class _CustomLoadingIndicatorState extends State<CustomLoadingIndicator> with SingleTickerProviderStateMixin {
+class _CustomLoadingIndicatorState extends State<CustomLoadingIndicator>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
