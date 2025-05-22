@@ -1,14 +1,27 @@
-Focuses on detecting scalp health and providing personalized solutions.
+**Hair Fall Detection and Prevention System**
 
-## Getting Started
+**Overview**
+The Hair Loss Detection and Prevention System is an innovative mobile application designed to detect hair loss patterns and provide personalized recommendations for prevention and treatment. Leveraging advanced machine learning models and APIs, the app analyzes scalp images, offers real-time chat-based guidance, and locates nearby dermatologists. This project combines computer vision, natural language processing, and geolocation services to deliver a user-friendly health solution.
 
-This project is a starting point for a Flutter application.
+**Features**
+**Hair Loss Detection:** Uses a hybrid deep learning model (ResNet + DenseNet) to analyze scalp images for hair loss patterns.
 
-A few resources to get you started if this is your first Flutter project:
+**Personalized Recommendations:** Integrates the Gemini API to provide tailored advice and prevention strategies via a chatbot interface.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+**Nearby Dermatologist Finder:** Utilizes Google Maps API to locate dermatologists based on the user’s location.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Mobile Integration:** Built with Flutter and Dart for a seamless cross-platform experience.
+
+**Model Deployment:** Employs TensorFlow Lite (TFLite) for efficient on-device model inference Technologies Used.
+
+**Model Training:** Hybrid model combining ResNet and DenseNet for accurate hair loss detection.
+
+**Flutter & Dart:** Cross-platform framework for building the mobile application.
+
+**TensorFlow Lite (TFLite):** Lightweight model deployment for on-device inference.
+
+**Google Maps API:** Enables geolocation-based search for nearby dermatologists.
+
+**Gemini API:** Powers the chatbot for personalized recommendations and user interaction.
+
+**Download APK:**  https://drive.google.com/file/d/15EqBjY6NvmghPmxwbYQdM2Vq0wb4ONSI/view?usp=sharing
