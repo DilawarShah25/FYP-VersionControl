@@ -8,22 +8,28 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  url_launcher: ^6.3.1
   image_picker: ^1.1.2
   dots_indicator: ^3.0.0
-  curved_navigation_bar: ^1.0.6
   http: ^1.2.2
   socket_io_client: ^3.0.2
   flutter_markdown: ^0.7.4+3
   google_maps_flutter: ^2.10.0
-#  geolocator: ^13.0.2
+  geolocator: ^14.0.0
   firebase_core: ^3.12.1
   firebase_auth: ^5.5.1
   cloud_firestore: ^5.6.5
-  firebase_storage: ^12.4.4
   shared_preferences: ^2.5.2
   intl_phone_field: ^3.2.0
-
+  google_fonts: ^6.2.1
+  connectivity_plus: ^6.1.3
+  image: ^4.5.4
+  intl: ^0.20.2
+  permission_handler: ^11.3.1
+  camera: ^0.11.1
+  location: ^8.0.0
+  flutter_animate: ^4.5.2
+  path_provider: ^2.1.5
+  flutter_gemini: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -34,19 +40,20 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - lib/front-end/assets/images/revive_hair.png
-    - lib/front-end/assets/icons/app_logo.png
-    - lib/front-end/assets/images/scanner.png
-    - lib/front-end/assets/images/blue background.jpg
-    - lib/front-end/assets/images/carousel_item1.png
-    - lib/front-end/assets/images/carousel_item2.png
-    - lib/front-end/assets/images/carousel_item3.png
-    - lib/front-end/assets/images/carousel_item4.png
-    - lib/front-end/assets/images/skin_type_4.png
-    - lib/front-end/assets/images/blog/hair_loss_types.png
-    - lib/front-end/assets/images/blog/hair-care-routine-for-men.jpg
-    - lib/front-end/assets/images/blog/home_remedy.png
-    - lib/front-end/assets/images/blog/healthy_scalp.jpg
+    - lib/assets/images/revive_hair.png
+    - lib/assets/icons/app_logo.png
+    - lib/assets/images/scanner.png
+    - lib/assets/images/blue background.jpg
+    - lib/assets/images/carousel_item1.png
+    - lib/assets/images/carousel_item2.png
+    - lib/assets/images/carousel_item3.png
+    - lib/assets/images/carousel_item4.png
+    - lib/assets/images/skin_type_4.png
+    - lib/assets/images/blog/hair_loss_types.png
+    - lib/assets/images/blog/hair-care-routine-for-men.jpg
+    - lib/assets/images/blog/home_remedy.png
+    - lib/assets/images/blog/healthy_scalp.jpg
+    - lib/assets/images/default_avatar.jpg
 
   fonts:
     - family: Pacifico
@@ -54,7 +61,7 @@ flutter:
         - asset: fonts/Pacifico-Regular.ttf
     - family: sans-serif
       fonts:
-        - asset: lib/front-end/assets/fonts/SourceSans3-VariableFont_wght.ttf
+        - asset: lib/assets/fonts/SourceSans3-VariableFont_wght.ttf
     - family: CCZoinks
       fonts:
-        - asset: lib/front-end/assets/fonts/CCZoinks.ttf
+        - asset: lib/assets/fonts/CCZoinks.ttf
